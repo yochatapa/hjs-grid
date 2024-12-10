@@ -7718,13 +7718,52 @@ class HjsGrid {
 
     #deepCopy = obj => {
         if (obj === null || typeof obj !== 'object') {
-            return obj;
+            return obj; // 원시 값은 그대로 반환
         }
-
-        if (typeof obj === 'object' && 'structuredClone' in window) {
-            return structuredClone(obj);
+    
+        // Date 객체 처리
+        if (obj instanceof Date) {
+            return new Date(obj.getTime());
         }
-    }
+    
+        // Map 객체 처리
+        if (obj instanceof Map) {
+            const mapCopy = new Map();
+            obj.forEach((value, key) => {
+                mapCopy.set(this.#deepCopy(key), this.#deepCopy(value));
+            });
+            return mapCopy;
+        }
+    
+        // Set 객체 처리
+        if (obj instanceof Set) {
+            const setCopy = new Set();
+            obj.forEach(value => {
+                setCopy.add(this.#deepCopy(value));
+            });
+            return setCopy;
+        }
+    
+        // 배열 처리
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.#deepCopy(item));
+        }
+    
+        // 일반 객체 처리
+        const copy = {};
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                // 함수 복사 처리
+                if (typeof obj[key] === 'function') {
+                    copy[key] = obj[key].bind(copy); // 함수의 참조를 복사
+                } else {
+                    copy[key] = this.#deepCopy(obj[key]); // 재귀적으로 복사
+                }
+            }
+        }
+    
+        return copy;
+    };
 
     #removeChildAll = element=>{
         while(element?.firstChild){
