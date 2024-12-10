@@ -2099,8 +2099,8 @@ class HjsGrid {
             return;
         }
         
-        let sameHiddenYn = this.#columns[colIdx].hidden??false === hidden
-
+        let sameHiddenYn = (this.#columns[colIdx].hidden??false) === hidden
+        console.log(this.#columns[colIdx].hidden,hidden,sameHiddenYn)
         this.#columns[colIdx].hidden = hidden;
         
         this.#setColumnsOption();
@@ -2150,7 +2150,7 @@ class HjsGrid {
                 this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
             }
         }
-        
+        console.log(sameHiddenYn)
         //undo 추가
         if(undoYn && !sameHiddenYn){
             this.#utils.set("redoArray",new Array())
@@ -4322,13 +4322,31 @@ class HjsGrid {
                                 let colNm = this.#getColumnNameAndIndex(colIdx)[0]
                                 this.hideColumn(colNm)
                             }else{
+                                let undoNumber = this.#utils.get("undoNumber")+1;
+                                this.#utils.set("undoNumber",undoNumber)
+
+                                let curSelectArray = this.#deepCopy(selectArray)
+
                                 for(let i=0;i<selectArray.length;i++){
                                     let sea = selectArray[i];
                                     for(let idx=sea.endColIndex;idx>=sea.startColIndex;idx--){
                                         if(this.#columns[idx].hidden === true || this.#columns[idx].fixed === true) continue;
-                                        this.hideColumn(idx)
+                                        this.#showHideColumn(idx,true,true,undoNumber)
                                     }
+
+                                    curSelectArray[i].startRowIndex = 0;
+                                    curSelectArray[i].endRowIndex = this.#data.get("showOrgData").length-1;
                                 }
+
+                                this.#utils.get("undoArray").push({
+                                    "type"          : "selectUndo",
+                                    "undoNumber"    : undoNumber,
+                                    "selectArray"   : curSelectArray,
+                                    "curInfo"       : {
+                                        rowIdx : 0,
+                                        colIdx : selectArray?.[0]?.startColIndex
+                                    }
+                                })
                             }
                             
                             this.#removeChildAll(CONTEXT_MENU_TARGET)
@@ -4360,10 +4378,32 @@ class HjsGrid {
                                         this.showColumn(colNm)
                                     }else{
                                         if(selectArray.length > 1) return alert(this.#getMessage("rc010-1"));
-                                        for(let idx=sa.endColIndex-1;idx>=sa.startColIndex+1;idx--){
-                                            if(this.#columns[idx].fixed === true) continue;
-                                            this.showColumn(idx)
+                                        
+                                        let undoNumber = this.#utils.get("undoNumber")+1;
+                                        this.#utils.set("undoNumber",undoNumber)
+
+                                        let curSelectArray = this.#deepCopy(selectArray)
+
+                                        let minCol = sa.startColIndex;
+                                        let maxCol = sa.endColIndex;
+
+                                        for(let idx=sa.endColIndex;idx>=sa.startColIndex;idx--){
+                                            if(this.#columns[idx].fixed === true || idx === sa.endColIndex || idx === sa.startColIndex) continue;
+                                            minCol = Math.min(minCol,idx);
+                                            this.#showHideColumn(idx,false,true,undoNumber)
                                         }
+                                        curSelectArray[0].startRowIndex = 0;
+                                        curSelectArray[0].endRowIndex = this.#data.get("showOrgData").length-1;
+
+                                        this.#utils.get("undoArray").push({
+                                            "type"          : "selectUndo",
+                                            "undoNumber"    : undoNumber,
+                                            "selectArray"   : curSelectArray,
+                                            "curInfo"       : {
+                                                rowIdx : 0,
+                                                colIdx : minCol
+                                            }
+                                        })
                                     }
                                     
                                     this.#removeChildAll(CONTEXT_MENU_TARGET)
