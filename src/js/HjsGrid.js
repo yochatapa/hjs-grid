@@ -6065,8 +6065,8 @@ class HjsGrid {
         let colIdx = this.#getColumnNameAndIndex(colNm)?.[1];
         
         this.el.get("middleHeader").scrollLeft = this.#utils.get("scroll").get("scrollLeftHeader") + this.el.get("middleBody").scrollLeft
-
-        if(e.keyCode === 16){
+        
+        if(e.keyCode === 16 && this.el.get("middleBodySelectCurrentEditor").style.opacity !== "1"){
             this.#calcBodySelect(true);
         }
     }
