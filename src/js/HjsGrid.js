@@ -2085,7 +2085,7 @@ class HjsGrid {
         return tdEl
     }
 
-    #showHideColumn = (colName,hidden) => {
+    #showHideColumn = (colName,hidden,undoYn=true, undoNumber) => {
         let colIdx;
         if(typeof colName === "number"){
             colIdx = colName
@@ -2105,7 +2105,7 @@ class HjsGrid {
         let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
         let sa = this.#utils.get("select").get("bodySelectArray")
         let saFlag = false;
-
+        
         for(let idx=sa.length-1;idx>=0;idx--){
             let curFlag = false;
             if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
@@ -2114,11 +2114,11 @@ class HjsGrid {
             let sOrgCol = sa[idx].startColIndex;
             let eOrgCol = sa[idx].endColIndex;
             
-            if(sa[idx].startColIndex === colIdx) sa[idx].startColIndex = (this.#columnsOption.get("visibleNextColumnIndex").get(sa[idx].startColIndex)??0)-1;
+            if(hidden && sa[idx].startColIndex === colIdx) sa[idx].startColIndex = (this.#columnsOption.get("visibleNextColumnIndex").get(sa[idx].startColIndex)??0)-1;
 
-            if(sa[idx].endColIndex === colIdx) sa[idx].endColIndex = (this.#columnsOption.get("visiblePrevColumnIndex").get(sa[idx].endColIndex)??-1);
+            if(hidden && sa[idx].endColIndex === colIdx) sa[idx].endColIndex = (this.#columnsOption.get("visiblePrevColumnIndex").get(sa[idx].endColIndex)??-1);
             
-            if(sa[idx].startColIndex < 0 && sa[idx].endColIndex < 0 || (sOrgCol === eOrgCol && sOrgCol === colIdx)){
+            if(hidden && (sa[idx].startColIndex < 0 && sa[idx].endColIndex < 0 || (sOrgCol === eOrgCol && sOrgCol === colIdx))){
                 sa.splice(idx,1)
                 if(curFlag) saFlag = true
             }
@@ -2126,10 +2126,14 @@ class HjsGrid {
 
         const NEXT_COL_IDX = this.#columnsOption.get("visibleNextColumnIndex").get(colIdx);
         const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
-
+        
         for(let idx=sa.length-1;idx>=0;idx--){
             sa[idx].startColIndex = Math.max(Math.min(sa[idx].startColIndex,MAX_VISIBLE_COL),0);
             sa[idx].endColIndex = Math.max(Math.min(sa[idx].endColIndex,MAX_VISIBLE_COL),0);
+            if(!hidden){
+                sa[idx].startRowIndex = 0;
+                sa[idx].endRowIndex = this.#data.get("showData").length - 1;
+            }
         }
         
         this.#utils.get("select").set("bodySelectArray",sa);
@@ -2142,6 +2146,40 @@ class HjsGrid {
                 curInfo.colIdx = Math.max(Math.min(curInfo.colIdx,MAX_VISIBLE_COL),0);
                 this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
             }
+        }
+
+        //undo 추가
+        if(undoYn){
+            this.#utils.set("redoArray",new Array())
+
+            if(this.#isUN(undoNumber)){
+                undoNumber = this.#utils.get("undoNumber")+1;
+                this.#utils.set("undoNumber",undoNumber)
+            }
+
+            const undoSelectArray = [{
+                deleteYn : false,
+                startRowIndex : 0,
+                endRowIndex : this.#data.get("showData").length-1,
+                startColIndex : colIdx,
+                endColIndex : colIdx,
+            }]
+
+            const undoCurInfo = {
+                rowIdx : 0,
+                colIdx : colIdx
+            }
+
+            this.#utils.get("undoArray").push({
+                "type"          : hidden?"hideColumn":"showColumn",
+                "colName"       : colName,
+                "colIdx"        : colIdx,
+                "data"          : data,
+                "undoNumber"    : undoNumber,
+                "hidden"        : hidden,
+                "selectArray"   : undoSelectArray,
+                "curInfo"       : undoCurInfo,
+            })
         }
 
         this.#reRenderGrid();
@@ -7128,6 +7166,24 @@ class HjsGrid {
                 this.#utils.get("undoArray").push(this.#utils.get("redoArray").splice(idx,1)[0]);
 
                 redoCnt++;
+            }else if(redoTarget.type === "hideColumn"){  
+                this.#utils.get("select").set("bodySelectCurrentInfo",{
+                    rowIdx : 0,
+                    colIdx : redoTarget.colIdx
+                });
+                this.#utils.get("select").set("bodySelectArray",{
+                    deleteYn : false,
+                    startRowIndex : 0,
+                    endRowIndex : this.#data.get("showData").length-1,
+                    startColIndex : redoTarget.colIdx,
+                    endColIndex : redoTarget.colIdx,
+                });      
+                
+                this.#showHideColumn(redoTarget.colName,redoTarget.hidden,false)
+
+                this.#utils.get("undoArray").push(this.#utils.get("redoArray").splice(idx,1)[0]);
+                
+                redoCnt++;
             }else if(redoTarget.type === "selectUndo"){
                 this.#utils.get("undoArray").push(this.#utils.get("redoArray").splice(idx,1)[0]);
 
@@ -7245,6 +7301,14 @@ class HjsGrid {
                 undoCnt++;
             }else if(undoTarget.type === "insertColumn"){                        
                 this.#removeColumn(undoTarget.newColName,false)
+
+                this.#utils.get("redoArray").push(this.#utils.get("undoArray").splice(idx,1)[0]);
+                
+                undoCnt++;
+            }else if(undoTarget.type === "hideColumn"){  
+                this.#utils.get("select").set("bodySelectCurrentInfo",undoTarget.curInfo);
+                this.#utils.get("select").set("bodySelectArray",undoTarget.selectArray);      
+                this.#showHideColumn(undoTarget.colName,!undoTarget.hidden,false)
 
                 this.#utils.get("redoArray").push(this.#utils.get("undoArray").splice(idx,1)[0]);
                 
