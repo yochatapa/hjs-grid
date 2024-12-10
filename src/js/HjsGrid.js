@@ -1924,7 +1924,7 @@ class HjsGrid {
         tdEl.style.maxHeight = HEIGHT + "px";
 
         let colName = this.getColumnNameByIndex(colIdx)
-        nameLabel.innerText = this.#data.get("showData")?.[rowIdx]?.[colName]??""
+        nameLabel.innerText = this.#getShowFormatData(colName,(this.#data.get("showData")?.[rowIdx]?.[colName]??""))
 
         divEl.style.maxHeight = HEIGHT-4 + "px";
 
@@ -3063,6 +3063,18 @@ class HjsGrid {
         }
 
         return;
+    }
+
+    #getShowFormatData = (colName, value) => { 
+        let colIdx;
+        if(typeof colName === "number"){
+            colIdx = colName
+            colName = this.getColumnNameByIndex(colIdx)
+        }else{
+            colIdx = this.getColumnIndexByName(colName)
+        }
+        if(!!this.#columns[colIdx].showFormat) return this.#columns[colIdx].showFormat(value);
+        else return value
     }
 
     #setCellValue = (rowIdx,colName,value, renderYn=true, undoYn=true, undoNumber, redoClearYn=true, undoSelectArray, undoCurInfo) => {
