@@ -2098,6 +2098,9 @@ class HjsGrid {
             console.error("Wrong column name/index");
             return;
         }
+        
+        let sameHiddenYn = this.#columns[colIdx].hidden??false === hidden
+
         this.#columns[colIdx].hidden = hidden;
         
         this.#setColumnsOption();
@@ -2138,7 +2141,7 @@ class HjsGrid {
         
         this.#utils.get("select").set("bodySelectArray",sa);
         
-        if(curInfo.colIdx === colIdx){
+        if(curInfo?.colIdx === colIdx){
             curInfo.colIdx = this.#isUN(NEXT_COL_IDX)?MAX_VISIBLE_COL:(NEXT_COL_IDX);
             //console.log(saFlag,curInfo.colIdx,NEXT_COL_IDX)
             if(saFlag || this.#isUN(curInfo.colIdx)) this.#utils.get("select").set("bodySelectCurrentInfo",null)
@@ -2147,9 +2150,9 @@ class HjsGrid {
                 this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
             }
         }
-
+        
         //undo 추가
-        if(undoYn){
+        if(undoYn && !sameHiddenYn){
             this.#utils.set("redoArray",new Array())
 
             if(this.#isUN(undoNumber)){
