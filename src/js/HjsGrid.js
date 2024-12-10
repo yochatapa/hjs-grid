@@ -2,7 +2,7 @@ class HjsGrid {
     #option; #columns; #grid; #utils; #data; #header; #summary; #cell; #row; #columnsOption; #style; #left;
   
     constructor(option) {
-        if(!!option) {
+        if(!this.#isUN(option)) {
             this.#option = new Map(Object.entries(option));
             
             this.#init();
@@ -2268,7 +2268,7 @@ class HjsGrid {
         let selectInfo = this.#utils.get("select").get("bodySelectInfo");
         let newSelectArray = new Array();
 
-        if(!!!selectInfo && selectArray.length>0){
+        if(this.#isUN(selectInfo) && selectArray.length>0){
             selectInfo = selectArray[0];
             selectInfo["deleteYn"] = false;
         }
@@ -3073,7 +3073,7 @@ class HjsGrid {
         }else{
             colIdx = this.getColumnIndexByName(colName)
         }
-        if(!!this.#columns[colIdx].showFormat) return this.#columns[colIdx].showFormat(value);
+        if(!this.#isUN(this.#columns[colIdx].showFormat)) return this.#columns[colIdx].showFormat(value);
         else return value
     }
 
@@ -3099,7 +3099,7 @@ class HjsGrid {
         let fullData = this.#data.get("fullData")
         let orgData = this.#data.get("orgData")
         
-        if(!!orgData[fullDataRow]){
+        if(!this.#isUN(orgData[fullDataRow])){
             if(showOrgData?.[rowIdx]?.["IUDFLAG"] === "I" || showOrgData?.[rowIdx]?.["IUDFLAG"] === "D") orgSameYn = false;
             else{
                 for(let [fKey,fValue] of Object.entries(orgData[fullDataRow])){
