@@ -1,0 +1,415 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HjsGrid 0.1</title>
+    <script async src="./src/js/HjsCombobox.js"></script>
+    <script async src="./src/js/HjsContextMenu.js"></script>
+    <script async src="./src/js/HjsGrid.js"></script>
+    
+    <link rel="stylesheet" type="text/css" href="./src/css/HjsCombobox.css"/>
+    <link rel="stylesheet" type="text/css" href="./src/css/HjsContextMenu.css"/>
+    <link rel="stylesheet" type="text/css" href="./src/css/HjsGrid.css"/>
+    <style>
+        html, body{
+            padding : 0;
+            margin : 0;
+        }
+
+        body{
+            height: 100vh;
+            padding: 10px;
+        }        
+    </style>
+    <script>
+        </script>
+</head>
+<body onload="bodyLoad()">
+    <div id="grid1"></div>
+    <input type="text" id="focusTest"/>
+    <div>
+        removeRow
+        <input type="number" id="removeIdx"/>
+        <input type="button" value="removeRow" onclick="removeRow()"/>
+        <input type="button" value="removeRow(flag만 처리)" onclick="removeRow2()"/>
+    </div>
+
+    <div>
+        insertRow
+        <input type="number" id="insertIdx"/>
+        <select id="insertOption">
+            <option value="true">Before</option>
+            <option value="false">After</option>
+        </select>
+        <input type="button" value="insertRow" onclick="insertRow()"/>
+    </div>
+
+    <div>
+        removeColumn
+        <input type="text" id="rcColIdx"/>
+        <input type="button" value="removeColumn" onclick="removeColumn()"/>
+    </div>
+
+    <div>
+        insertColumn
+        <input type="text" id="icColIdx"/>
+        <input type="text" id="icnColIdx"/>
+        <select id="icOption">
+            <option value="true">Before</option>
+            <option value="false">After</option>
+        </select>
+        <input type="button" value="insertColumn" onclick="insertColumn()"/>
+    </div>
+
+    <div>
+        hideColumn
+        <input type="text" id="hcColIdx"/>
+        <input type="button" value="hideColumn" onclick="hideColumn()"/>
+    </div>
+
+    <div>
+        showColumn
+        <input type="text" id="scColIdx"/>
+        <input type="button" value="showColumn" onclick="showColumn()"/>
+    </div>
+    
+    <div>
+        goToCell
+        <input type="number" id="gtcRowIdx"/>
+        <input type="text" id="gtcColIdx"/>
+        <input type="button" value="goToCell" onclick="goTo()"/>
+    </div>
+
+    <div>
+        getCellValue
+        <input type="number" id="gcvRowIdx"/>
+        <input type="text" id="gcvColIdx"/>
+        <input type="button" value="getCellValue" onclick="getCellValue()"/>
+        <label id="gcvResult"></label>
+    </div>    
+
+    <div>
+        setData
+        <input type="button" value="setData" onclick="setData(false)"/>
+        <input type="button" value="setData - append" onclick="setData(true)"/>
+    </div>  
+</body>
+<script>
+    var grid;
+    var rowData = {}
+    var data = [];
+    function bodyLoad(){
+        const ROW_COUNT = 50;
+        const COL_COUNT = 100;
+
+        for(let idx=0;idx<ROW_COUNT;idx++){
+            let tempData = {
+                "NUM" : idx,
+                "NUM_NM" : idx+"번째 row"
+            }
+
+            for(let idx2=0;idx2<COL_COUNT;idx2++){
+                //tempData["COL_"+idx2] = idx + "/" + idx2;
+                tempData["COL_"+idx2] = Math.round(Math.random()*100)%100;
+            }
+
+            
+            data.push(tempData)
+        }
+
+        let colInfo = new Array();
+        
+        
+        /*colInfo.push({
+        	name : "IUDFLAG",
+            title : "상태",
+            sortable : true,
+        })*/
+
+        for(let idx2=0;idx2<COL_COUNT;idx2++){
+            let colJson = {
+                name        : "COL_" + idx2,
+                title       : "NM_" + idx2,
+                width       : 120 - 10 * (idx2%5),
+                sortable    : true,
+            }
+
+            if(idx2%5 === 0 || idx2%5 === 2) colJson["hidden"] = true
+
+            switch(idx2){
+                case 0 :
+                    colJson["align"] = {
+                        header : {
+                            vertical : "center",
+                            horizontal : "right",
+                        },
+                        body : {
+                            vertical : "center",
+                            horizontal : "center",
+                        }
+                    }
+
+                    colJson["type"] = "text"
+                    colJson["filter"] = {
+                        //filterType : ["eq","ne",],
+                    };
+                    break;
+                case 1 :
+                    colJson["type"] = "number";
+                    colJson["filter"] = {
+                        //filterType : ["eq","ne","gt","ge","lt","le"]
+                    }
+                    break;
+                case 2 :
+                case 3 :
+                    colJson["filter"] = true
+                    break;
+                case 8 : 
+                    colJson["fixed"] = true;
+                    colJson["align"] = {
+                        header : {
+                            vertical : "top",
+                            horizontal : "right",
+                        },
+                        body : {
+                            vertical : "center",
+                            horizontal : "center",
+                        }
+                    }
+                    colJson["filter"] = true
+                    break;
+                case 9 :
+                    colJson["fixed"] = true;
+                    colJson["align"] = {
+                        header : {
+                            vertical : "bottom",
+                            horizontal : "center",
+                        },
+                        body : {
+                            vertical : "center",
+                            horizontal : "left",
+                        }
+                    }
+                    break;
+                case 11 :
+                    //colJson["fixed"] = true
+                    colJson["filter"] = true
+                    colJson["type"] = "date"
+                    break;
+                case 13 :
+                    //colJson["fixed"] = true
+                    colJson["filter"] = true
+                    colJson["type"] = "time"
+                    break;
+                case 14 :
+                    //colJson["fixed"] = true
+                    colJson["filter"] = true
+                    colJson["type"] = "datetime"
+                    break;
+            }
+
+            colInfo.push(colJson);
+        }
+        console.time("grid")
+        grid = new HjsGrid({
+            el      : "#grid1",
+            columns : colInfo,
+            header  : {
+                height : 20,
+                resize : true,
+                row    : 4,
+                mergeInfo   : [
+                    {
+                        startColumn : "COL_3",
+                        endColumn   : "COL_10",
+                        startRow    : 0,
+                        rowspan     : 2,
+                        title       : "멀티헤더 테스트1"
+                    },
+                    {
+                        startColumn : "COL_3",
+                        endColumn   : "COL_5",
+                        startRow    : 2,
+                        rowspan     : 1,
+                        title       : "멀티헤더 테스트2"
+                    },
+                    {
+                        startColumn : "COL_3",
+                        endColumn   : "COL_3",
+                        startRow    : 3,
+                        rowspan     : 1,
+                        title       : "멀티헤더 테스트3"
+                    },
+                    {
+                        startColumn : "COL_4",
+                        endColumn   : "COL_5",
+                        startRow    : 3,
+                        rowspan     : 1,
+                        title       : "멀티헤더 테스트4"
+                    },
+                    {
+                        startColumn : "COL_6",
+                        endColumn   : "COL_6",
+                        startRow    : 2,
+                        rowspan     : 2,
+                        title       : "멀티헤더 테스트5"
+                    },
+                    {
+                        startColumn : "COL_7",  
+                        endColumn   : "COL_10",     
+                        startRow    : 2,
+                        rowspan     : 2,                
+                        title       : "멀티헤더 테스트6"
+                    },
+                    {
+                        startColumn : "COL_22",  
+                        endColumn   : "COL_24",     
+                        startRow    : 1,
+                        rowspan     : 2,                
+                        title       : "멀티헤더 테스트7"
+                    },
+                ]
+            },
+            grid    : {
+                //virtualScrollX : true,
+                //virtualScrollY : true,
+                filter : {
+                    filterBar : true,
+                    typeTitle : {
+                    	eq : "일치",
+                        nq : "불일치",
+                    }
+                },
+                /*rowCount : rowCount => {
+                	return "총 : " + rowCount + " 건"
+                }*/
+            },
+            body : {
+                cell : {
+                    height : 20,
+                    tooltip : true,
+                },
+                row : {
+
+                }
+            },
+            left : {
+                checkbox : {
+                    headerCheckbox : true,
+                    width : 42,
+                    //title : "전체",
+                    /*align : {
+                        header : {
+                            vertical : "bottom",
+                            horizontal : "center",
+                        },
+                        body : {
+                            vertical : "bottom",
+                            horizontal : "center",
+                        }
+                    }*/
+                },
+                rowNumber : {
+                    rowNumberOrder : "ASC",
+                    title : "순번",
+                    width : 50,
+                    /*align : {
+                        header : {
+                            vertical : "bottom",
+                            horizontal : "right",
+                        },
+                        body : {
+                            vertical : "bottom",
+                            horizontal : "center",
+                        }
+                    }*/
+                },
+                rowStatus : {
+                    title : "상태",
+                    width : 50,
+                    insert : {
+                        label : "추가",
+                        class : ["insert-cell"]
+                    },
+                    delete : {
+                        label : "삭제",
+                        class : ["delete-cell"]
+                    },
+                    update : {
+                        label : "수정",
+                        class : ["update-cell"]
+                    },
+                    /*align : {
+                        header : {
+                            vertical : "bottom",
+                            horizontal : "right",
+                        },
+                        body : {
+                            vertical : "bottom",
+                            horizontal : "center",
+                        }
+                    }*/
+                },
+                order : ["checkbox","rowNumber","rowStatus"]
+            }
+        })
+
+        console.timeLog("grid")
+        grid.setData(data);
+        console.timeEnd("grid")
+        grid.setData(data,true);
+    }
+    
+    function removeRow(){
+        grid.removeRow(document.getElementById("removeIdx").value,true);
+    }
+    
+    function removeRow2(){
+        grid.removeRow(document.getElementById("removeIdx").value,false);
+    }
+
+    function insertRow(){
+        grid.insertRow(document.getElementById("insertIdx").value,document.getElementById("insertOption").value === "true")
+    }
+
+    function removeColumn(){
+        grid.removeColumn(document.getElementById("rcColIdx").value)
+    }
+
+    function insertColumn(){
+        grid.insertColumn(
+            document.getElementById("icColIdx").value,
+            {
+                name:document.getElementById("icnColIdx").value,
+                title:document.getElementById("icnColIdx").value,
+                width : 30
+            },
+            document.getElementById("icOption").value === "true"
+        )
+    }
+
+    function hideColumn(){
+        grid.hideColumn(document.getElementById("hcColIdx").value)
+    }
+    
+    function showColumn(){
+        grid.showColumn(document.getElementById("scColIdx").value)
+    }
+    
+    function goTo(){
+        grid.goToCell(document.getElementById("gtcRowIdx").value,document.getElementById("gtcColIdx").value);
+    }
+
+    function getCellValue(){
+        document.getElementById("gcvResult").innerText = grid.getCellValue(document.getElementById("gcvRowIdx").value,document.getElementById("gcvColIdx").value)
+    }
+
+    function setData(flag){
+        grid.setData(data,flag)
+    }
+</script>
+</html>
+
+

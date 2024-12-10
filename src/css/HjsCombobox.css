@@ -1,0 +1,24 @@
+.hjs-combobox-option {
+    display: flex;
+}
+
+input.hjs-combobox-name {
+    margin: 4px;
+}
+
+label.hjs-combobox-label {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.hjs-combobox-check-all-div {
+    height: 200px;
+    margin: 0 4px 4px 4px;
+    overflow: auto;
+    border: 1px solid #e6e6e6;
+}
+
+.hjs-combobox-option:hover {
+    background: #f1f1f1;
+}
