@@ -4356,7 +4356,7 @@ class HjsGrid {
                                         this.showColumn(colNm)
                                     }else{
                                         if(selectArray.length > 1) return alert(this.#getMessage("rc010-1"));
-                                        for(let idx=sa.endColIndex;idx>=sa.startColIndex;idx--){
+                                        for(let idx=sa.endColIndex-1;idx>=sa.startColIndex+1;idx--){
                                             if(this.#columns[idx].fixed === true) continue;
                                             this.showColumn(idx)
                                         }
@@ -7184,6 +7184,14 @@ class HjsGrid {
                 this.#utils.get("undoArray").push(this.#utils.get("redoArray").splice(idx,1)[0]);
                 
                 redoCnt++;
+            }else if(redoTarget.type === "showColumn"){  
+                this.#utils.get("select").set("bodySelectCurrentInfo",redoTarget.curInfo);
+                this.#utils.get("select").set("bodySelectArray",redoTarget.selectArray);  
+                this.#showHideColumn(redoTarget.colName,redoTarget.hidden,false)
+
+                this.#utils.get("undoArray").push(this.#utils.get("redoArray").splice(idx,1)[0]);
+                
+                redoCnt++;
             }else if(redoTarget.type === "selectUndo"){
                 this.#utils.get("undoArray").push(this.#utils.get("redoArray").splice(idx,1)[0]);
 
@@ -7308,6 +7316,25 @@ class HjsGrid {
             }else if(undoTarget.type === "hideColumn"){  
                 this.#utils.get("select").set("bodySelectCurrentInfo",undoTarget.curInfo);
                 this.#utils.get("select").set("bodySelectArray",undoTarget.selectArray);      
+                this.#showHideColumn(undoTarget.colName,!undoTarget.hidden,false)
+
+                this.#utils.get("redoArray").push(this.#utils.get("undoArray").splice(idx,1)[0]);
+                
+                undoCnt++;
+            }else if(undoTarget.type === "showColumn"){  
+                
+                this.#utils.get("select").set("bodySelectCurrentInfo",{
+                    rowIdx : 0,
+                    colIdx : undoTarget.colIdx
+                });
+                this.#utils.get("select").set("bodySelectArray",{
+                    deleteYn : false,
+                    startRowIndex : 0,
+                    endRowIndex : this.#data.get("showData").length-1,
+                    startColIndex : undoTarget.colIdx,
+                    endColIndex : undoTarget.colIdx,
+                });      
+                    
                 this.#showHideColumn(undoTarget.colName,!undoTarget.hidden,false)
 
                 this.#utils.get("redoArray").push(this.#utils.get("undoArray").splice(idx,1)[0]);
