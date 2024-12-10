@@ -1,0 +1,22 @@
+name: Deploy HjsGrid Demo
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 푸시될 때마다 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # GitHub Actions가 실행될 OS
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3  # GitHub 저장소를 체크아웃
+
+      - name: Set up GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.ACTIONS_DEPLOY_KEY }}  # 자동으로 배포 권한을 부여
+          publish_dir: ./  # root 디렉토리에서 index.html과 /src를 포함한 전체 파일을 배포
+          user_name: 'yochatapa'  # GitHub 사용자 이름
+          user_email: 'yochatapa@gmail.com'  # GitHub 이메일 주소
