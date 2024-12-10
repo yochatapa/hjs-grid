@@ -2098,6 +2098,9 @@ class HjsGrid {
             console.error("Wrong column name/index");
             return;
         }
+        
+        let sameHiddenYn = (this.#columns[colIdx].hidden??false) === hidden
+        console.log(this.#columns[colIdx].hidden,hidden,sameHiddenYn)
         this.#columns[colIdx].hidden = hidden;
         
         this.#setColumnsOption();
@@ -2138,7 +2141,7 @@ class HjsGrid {
         
         this.#utils.get("select").set("bodySelectArray",sa);
         
-        if(curInfo.colIdx === colIdx){
+        if(curInfo?.colIdx === colIdx){
             curInfo.colIdx = this.#isUN(NEXT_COL_IDX)?MAX_VISIBLE_COL:(NEXT_COL_IDX);
             //console.log(saFlag,curInfo.colIdx,NEXT_COL_IDX)
             if(saFlag || this.#isUN(curInfo.colIdx)) this.#utils.get("select").set("bodySelectCurrentInfo",null)
@@ -2147,9 +2150,9 @@ class HjsGrid {
                 this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
             }
         }
-
+        console.log(sameHiddenYn)
         //undo 추가
-        if(undoYn){
+        if(undoYn && !sameHiddenYn){
             this.#utils.set("redoArray",new Array())
 
             if(this.#isUN(undoNumber)){
@@ -2246,6 +2249,7 @@ class HjsGrid {
         let tempArray = new Array();
         
         for(let showOrgRow of showOrgData){
+            if(showOrgRow.IUDFLAG === "D") continue;
             let showFlag = true
             for(let idx=0;idx<filterOrder.length;idx++){
                 let colName = filterOrder[idx].column
@@ -3076,28 +3080,44 @@ class HjsGrid {
         let showOrgData = this.#data.get("showOrgData")
 
         let beforeValue = showOrgData[rowIdx][colName];
+
+        let orgSameYn = true;
+
+        let showData = this.#data.get("showData")
+        let fullData = this.#data.get("fullData")
+        let orgData = this.#data.get("orgData")
+        
+        if(!!orgData[fullDataRow]){
+            if(showOrgData?.[rowIdx]?.["IUDFLAG"] === "I" || showOrgData?.[rowIdx]?.["IUDFLAG"] === "D") orgSameYn = false;
+            else{
+                for(let [fKey,fValue] of Object.entries(orgData[fullDataRow])){
+                    if(typeof fValue === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+                    if((fKey===colName && fValue !== value) || (fKey!==colName && fValue !== showOrgData?.[rowIdx]?.[fKey])){
+                        orgSameYn = false;
+                        break;
+                    }
+                }
+            }
+        }
         
         if(!this.#isUN(showOrgData?.[rowIdx]?.[colName])){
             if(typeof showOrgData[rowIdx][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
-            if(showOrgData?.[rowIdx]?.["IUDFLAG"] !== "I" && showOrgData?.[rowIdx]?.["IUDFLAG"] !== "D" && showOrgData[rowIdx][colName] !== value) showOrgData[rowIdx]["IUDFLAG"] = "U"
+            let showOrgIUDFLAG = showOrgData?.[rowIdx]?.["IUDFLAG"] ;
+            if(showOrgIUDFLAG !== "I" && showOrgIUDFLAG !== "D" && showOrgData[rowIdx][colName] !== value) showOrgData[rowIdx]["IUDFLAG"] = orgSameYn?"":"U"
             showOrgData[rowIdx][colName] = value;
             this.#data.set("showOrgData",showOrgData)
         }
-
-        let showData = this.#data.get("showData")
         
         if(!this.#isUN(showData?.[showDataRow]?.[colName])){
             if(typeof showData[showDataRow][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
-            if(showData?.[rowIdx]?.["IUDFLAG"] !== "I" && showData?.[showDataRow]?.["IUDFLAG"] !== "D" && showData[showDataRow][colName] !== value) showData[showDataRow]["IUDFLAG"] = "U"
+            if(showData?.[rowIdx]?.["IUDFLAG"] !== "I" && showData?.[showDataRow]?.["IUDFLAG"] !== "D" && showData[showDataRow][colName] !== value) showData[showDataRow]["IUDFLAG"] = orgSameYn?"":"U"
             showData[showDataRow][colName] = value;
             this.#data.set("showData",showData)
         }
-
-        let fullData = this.#data.get("fullData")
         
         if(!this.#isUN(fullData?.[fullDataRow]?.[colName])){
             if(typeof fullData[fullDataRow][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
-            if(fullData?.[rowIdx]?.["IUDFLAG"] !== "I" && fullData?.[fullDataRow]?.["IUDFLAG"] !== "D" && fullData[fullDataRow][colName] !== value) fullData[fullDataRow]["IUDFLAG"] = "U"
+            if(fullData?.[rowIdx]?.["IUDFLAG"] !== "I" && fullData?.[fullDataRow]?.["IUDFLAG"] !== "D" && fullData[fullDataRow][colName] !== value) fullData[fullDataRow]["IUDFLAG"] = orgSameYn?"":"U"
             fullData[fullDataRow][colName] = value;
             this.#data.set("fullData",fullData)
         }
@@ -4318,13 +4338,31 @@ class HjsGrid {
                                 let colNm = this.#getColumnNameAndIndex(colIdx)[0]
                                 this.hideColumn(colNm)
                             }else{
+                                let undoNumber = this.#utils.get("undoNumber")+1;
+                                this.#utils.set("undoNumber",undoNumber)
+
+                                let curSelectArray = this.#deepCopy(selectArray)
+
                                 for(let i=0;i<selectArray.length;i++){
                                     let sea = selectArray[i];
                                     for(let idx=sea.endColIndex;idx>=sea.startColIndex;idx--){
                                         if(this.#columns[idx].hidden === true || this.#columns[idx].fixed === true) continue;
-                                        this.hideColumn(idx)
+                                        this.#showHideColumn(idx,true,true,undoNumber)
                                     }
+
+                                    curSelectArray[i].startRowIndex = 0;
+                                    curSelectArray[i].endRowIndex = this.#data.get("showOrgData").length-1;
                                 }
+
+                                this.#utils.get("undoArray").push({
+                                    "type"          : "selectUndo",
+                                    "undoNumber"    : undoNumber,
+                                    "selectArray"   : curSelectArray,
+                                    "curInfo"       : {
+                                        rowIdx : 0,
+                                        colIdx : selectArray?.[0]?.startColIndex
+                                    }
+                                })
                             }
                             
                             this.#removeChildAll(CONTEXT_MENU_TARGET)
@@ -4356,10 +4394,32 @@ class HjsGrid {
                                         this.showColumn(colNm)
                                     }else{
                                         if(selectArray.length > 1) return alert(this.#getMessage("rc010-1"));
-                                        for(let idx=sa.endColIndex-1;idx>=sa.startColIndex+1;idx--){
-                                            if(this.#columns[idx].fixed === true) continue;
-                                            this.showColumn(idx)
+                                        
+                                        let undoNumber = this.#utils.get("undoNumber")+1;
+                                        this.#utils.set("undoNumber",undoNumber)
+
+                                        let curSelectArray = this.#deepCopy(selectArray)
+
+                                        let minCol = sa.startColIndex;
+                                        let maxCol = sa.endColIndex;
+
+                                        for(let idx=sa.endColIndex;idx>=sa.startColIndex;idx--){
+                                            if(this.#columns[idx].fixed === true || idx === sa.endColIndex || idx === sa.startColIndex) continue;
+                                            minCol = Math.min(minCol,idx);
+                                            this.#showHideColumn(idx,false,true,undoNumber)
                                         }
+                                        curSelectArray[0].startRowIndex = 0;
+                                        curSelectArray[0].endRowIndex = this.#data.get("showOrgData").length-1;
+
+                                        this.#utils.get("undoArray").push({
+                                            "type"          : "selectUndo",
+                                            "undoNumber"    : undoNumber,
+                                            "selectArray"   : curSelectArray,
+                                            "curInfo"       : {
+                                                rowIdx : 0,
+                                                colIdx : minCol
+                                            }
+                                        })
                                     }
                                     
                                     this.#removeChildAll(CONTEXT_MENU_TARGET)
@@ -6005,8 +6065,8 @@ class HjsGrid {
         let colIdx = this.#getColumnNameAndIndex(colNm)?.[1];
         
         this.el.get("middleHeader").scrollLeft = this.#utils.get("scroll").get("scrollLeftHeader") + this.el.get("middleBody").scrollLeft
-
-        if(e.keyCode === 16){
+        
+        if(e.keyCode === 16 && this.el.get("middleBodySelectCurrentEditor").style.opacity !== "1"){
             this.#calcBodySelect(true);
         }
     }
