@@ -1144,7 +1144,7 @@ class HjsGrid {
         let rowNumberFlag = !this.#isUN(this.#left.get("rowNumber"));
         let rowStatusFlag = !this.#isUN(this.#left.get("rowStatus"));
 
-        let orderArray = this.#isUN(this.#left.get("order"))?["checkbox","rowNumber"]:this.#left.get("order");
+        let orderArray = this.#isUN(this.#left.get("order"))?["checkbox","rowNumber","rowStatus"]:this.#left.get("order");
 
         let trEl = this.#utils.get("scroll").get("displayedLeftRow").get(rowIdx)
 
@@ -1163,7 +1163,7 @@ class HjsGrid {
                 this.#utils.get("scroll").get("displayedLeftColumn").get(rowIdx).set("rowNumber",rnEl);
                 trEl.append(rnEl);
             }
-            if(orderArray[idx] === "rowStatus" && rowNumberFlag === true  && !this.#utils.get("scroll").get("displayedLeftColumn").get(rowIdx).has("rowStatus")){
+            if(orderArray[idx] === "rowStatus" && rowStatusFlag === true  && !this.#utils.get("scroll").get("displayedLeftColumn").get(rowIdx).has("rowStatus")){
                 let rnEl = this.#createLeftRowStatus(rowIdx)
                 this.#utils.get("scroll").get("displayedLeftColumn").get(rowIdx).set("rowStatus",rnEl);
                 trEl.append(rnEl);
