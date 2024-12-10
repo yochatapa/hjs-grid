@@ -3080,28 +3080,44 @@ class HjsGrid {
         let showOrgData = this.#data.get("showOrgData")
 
         let beforeValue = showOrgData[rowIdx][colName];
+
+        let orgSameYn = true;
+
+        let showData = this.#data.get("showData")
+        let fullData = this.#data.get("fullData")
+        let orgData = this.#data.get("orgData")
+        
+        if(!!orgData[fullDataRow]){
+            if(showOrgData?.[rowIdx]?.["IUDFLAG"] === "I" || showOrgData?.[rowIdx]?.["IUDFLAG"] === "D") orgSameYn = false;
+            else{
+                for(let [fKey,fValue] of Object.entries(orgData[fullDataRow])){
+                    if(typeof fValue === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+                    if((fKey===colName && fValue !== value) || (fKey!==colName && fValue !== showOrgData?.[rowIdx]?.[fKey])){
+                        orgSameYn = false;
+                        break;
+                    }
+                }
+            }
+        }
         
         if(!this.#isUN(showOrgData?.[rowIdx]?.[colName])){
             if(typeof showOrgData[rowIdx][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
-            if(showOrgData?.[rowIdx]?.["IUDFLAG"] !== "I" && showOrgData?.[rowIdx]?.["IUDFLAG"] !== "D" && showOrgData[rowIdx][colName] !== value) showOrgData[rowIdx]["IUDFLAG"] = "U"
+            let showOrgIUDFLAG = showOrgData?.[rowIdx]?.["IUDFLAG"] ;
+            if(showOrgIUDFLAG !== "I" && showOrgIUDFLAG !== "D" && showOrgData[rowIdx][colName] !== value) showOrgData[rowIdx]["IUDFLAG"] = orgSameYn?"":"U"
             showOrgData[rowIdx][colName] = value;
             this.#data.set("showOrgData",showOrgData)
         }
-
-        let showData = this.#data.get("showData")
         
         if(!this.#isUN(showData?.[showDataRow]?.[colName])){
             if(typeof showData[showDataRow][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
-            if(showData?.[rowIdx]?.["IUDFLAG"] !== "I" && showData?.[showDataRow]?.["IUDFLAG"] !== "D" && showData[showDataRow][colName] !== value) showData[showDataRow]["IUDFLAG"] = "U"
+            if(showData?.[rowIdx]?.["IUDFLAG"] !== "I" && showData?.[showDataRow]?.["IUDFLAG"] !== "D" && showData[showDataRow][colName] !== value) showData[showDataRow]["IUDFLAG"] = orgSameYn?"":"U"
             showData[showDataRow][colName] = value;
             this.#data.set("showData",showData)
         }
-
-        let fullData = this.#data.get("fullData")
         
         if(!this.#isUN(fullData?.[fullDataRow]?.[colName])){
             if(typeof fullData[fullDataRow][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
-            if(fullData?.[rowIdx]?.["IUDFLAG"] !== "I" && fullData?.[fullDataRow]?.["IUDFLAG"] !== "D" && fullData[fullDataRow][colName] !== value) fullData[fullDataRow]["IUDFLAG"] = "U"
+            if(fullData?.[rowIdx]?.["IUDFLAG"] !== "I" && fullData?.[fullDataRow]?.["IUDFLAG"] !== "D" && fullData[fullDataRow][colName] !== value) fullData[fullDataRow]["IUDFLAG"] = orgSameYn?"":"U"
             fullData[fullDataRow][colName] = value;
             this.#data.set("fullData",fullData)
         }
