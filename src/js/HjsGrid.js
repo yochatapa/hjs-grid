@@ -7175,7 +7175,7 @@ class HjsGrid {
     #editorKeyDown = (e,rowId,colNm,editorEl)=> {
         if(e.ctrlKey && e.keyCode === 17) return;
         if(e.shiftKey && e.keyCode === 16) return;
-
+        
         let rowIdx = this.#getShowOrgDataIndexById(rowId)
         let colIdx = this.#getColumnNameAndIndex(colNm)?.[1];
 
@@ -7221,6 +7221,11 @@ class HjsGrid {
             }
             
             this.#renderGrid();
+        }else if(e.keyCode === 27){  // esc
+            e.preventDefault();
+            
+            editorEl.value = this.getCellValue(rowIdx,colNm)
+            editorEl.style.opacity = "0"
         }else if(e.keyCode === 37){// arrow left
             if(editorEl.style.opacity === "0"){
                 e.preventDefault();
