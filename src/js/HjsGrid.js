@@ -3139,6 +3139,13 @@ class HjsGrid {
             if(data[idx]._id === id) return idx;
         }
     }
+
+    #getOrgDataIndexById = id => {
+        let data = this.#data.get("orgData");
+        for(let idx=0;idx<data.length;idx++){
+            if(data[idx]._id === id) return idx;
+        }
+    }
     
     #getShowDataIndexById = id => {
         let data = this.#data.get("showData");
@@ -3383,6 +3390,7 @@ class HjsGrid {
         
         let showDataRow = this.#getShowDataIndexById(this.#getIdByShowOrgDataIndex(rowIdx));
         let fullDataRow = this.#getFullDataIndexById(this.#getIdByShowOrgDataIndex(rowIdx));
+        let orgDataRow = this.#getOrgDataIndexById(this.#getIdByShowOrgDataIndex(rowIdx));
 
         let showOrgData = this.#data.get("showOrgData")
 
@@ -3394,10 +3402,10 @@ class HjsGrid {
         let fullData = this.#data.get("fullData")
         let orgData = this.#data.get("orgData")
         
-        if(!this.#isUN(orgData[fullDataRow])){
+        if(!this.#isUN(orgData[orgDataRow])){
             if(showOrgData?.[rowIdx]?.["IUDFLAG"] === "I" || showOrgData?.[rowIdx]?.["IUDFLAG"] === "D") orgSameYn = false;
             else{
-                for(let [fKey,fValue] of Object.entries(orgData[fullDataRow])){
+                for(let [fKey,fValue] of Object.entries(orgData[orgDataRow])){
                     if(typeof fValue === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
                     if((fKey===colName && fValue !== value) || (fKey!==colName && fValue !== showOrgData?.[rowIdx]?.[fKey])){
                         orgSameYn = false;
