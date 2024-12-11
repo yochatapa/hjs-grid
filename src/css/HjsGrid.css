@@ -275,6 +275,7 @@
 .hjs-grid-left-body {
     flex: 1;
     overflow: hidden;
+    position: relative;
 }
 
 /*.hjs-grid-left-body::-webkit-scrollbar {
