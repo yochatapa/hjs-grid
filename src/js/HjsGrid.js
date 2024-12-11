@@ -602,6 +602,8 @@ class HjsGrid {
 
         this.el.set("leftBodyTableTbody",bodyTableTbodyEl);
 
+        this.#setNativeEvent(this.el.get("leftBody"),"touchstart",this.#gridElementTouchStart,null,{passive:false})
+
         this.el.get("leftBodyTable").append(bodyTableTbodyEl);
     }
 
@@ -787,14 +789,16 @@ class HjsGrid {
         }
 
         for(let [key,value] of this.#utils.get("scroll").get("displayedLeftRow")){
-            value.remove();
+            if(this.#utils.get("select").get("target")?.closest("tr") === value) value.style.display = "none";
+                else value.remove();
             this.#utils.get("scroll").get("displayedLeftRow").delete(key);
         }
         
         for(let [key,value] of this.#utils.get("scroll").get("displayedLeftColumn")){
             if(key === "first"){
                 for(let [key2,value2] of this.#utils.get("scroll").get("displayedLeftColumn").get("first")){
-                    value2.remove();
+                    if(this.#utils.get("select").get("target")?.closest("td") === value2) value2.style.display = "none";
+                        else value2.remove();
                 }
             }
             this.#utils.get("scroll").get("displayedLeftColumn").delete(key);
@@ -3271,7 +3275,7 @@ class HjsGrid {
 
         for(let idx=0;idx<selectArray.length;idx++){
             let sa = selectArray[idx];
-            console.log(sa.startRowIndex,sa.endRowIndex,rowIdx)
+            
             if(
                 sa.startRowIndex <= rowIdx && sa.endRowIndex >= rowIdx
             ){
@@ -4825,7 +4829,7 @@ class HjsGrid {
             //     CONTEXT_MENU_TARGET.style.top = (e.clientY/*-tableInfo.top-(rowIdx-passedRowCount)*this.#cell.get("height")*/) + "px"
             // }
             
-            this.#calcLeftBodySelect();
+            this.#calcLeftBodySelect(e.type==="touchstart");
         }
     }
 
@@ -5586,7 +5590,8 @@ class HjsGrid {
 
     #gridElementTouchStart = e => {
         if(e.target.type === "checkbox") return;
-        if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
+        if(this.#utils.get("select").get("leftBodySelectArray").length>0 
+            || !(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
             e.preventDefault();
             this.#utils.get("scroll").get("touchInfo").set("touchScrollFlag",true)
             this.#utils.get("scroll").get("touchInfo").set("pageX",e.touches[0].pageX)
@@ -5599,10 +5604,9 @@ class HjsGrid {
         }
     }
     
-    #gridElementTouchMove = e => {                
+    #gridElementTouchMove = e => {    
         if(this.#utils.get("scroll").get("touchInfo").get("touchScrollFlag") === true){ 
             e.preventDefault();
-    
             const touchY = e.touches[0].pageY;
             const deltaY = this.#utils.get("scroll").get("touchInfo").get("pageY") - touchY;
 
