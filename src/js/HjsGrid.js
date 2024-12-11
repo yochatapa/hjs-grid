@@ -174,11 +174,12 @@ class HjsGrid {
 
         this.#utils.set("select",new Map());
         this.#utils.get("select").set("bodySelectArray",new Array());
-        this.#utils.get("select").set("bodySelectRenderedArray",new Array());
+        this.#utils.get("select").set("leftBodySelectArray",new Array());
+        this.#utils.get("select").set("leftBodySelectYn",false);
 
         this.#utils.set("current",new Map());
         this.#utils.get("current").set("firstClick",false);
-        this.#utils.get("current").set("secondClick",false);
+        this.#utils.get("current").set("leftFirstClick",false);
 
         this.#utils.set("editor",new Map());
         this.#utils.get("editor").set("setValueFlag",true);
@@ -236,11 +237,16 @@ class HjsGrid {
         this.#columnsOption.set("bodyColumnRealIndex",new Map());
         this.#columnsOption.set("visibleColIndex",new Map());
         this.#columnsOption.set("visibleRealColIndex",new Map());
+        this.#columnsOption.set("leftRealColIndex",new Map());
         
         let widthSum = 0;
         let columnWidth = new Array();
         let columnBeforeSum = new Array();
         let columnAfterSum = new Array();
+        let leftWidthSum = 0;
+        let leftColumnWidth = new Array();
+        let leftColumnBeforeSum = new Array();
+        let leftColumnAfterSum = new Array();
         let visibleNextColumnIndex, visiblePrevColumnIndex;
         let visibleCnt = 0;
         let fixedCnt = 0;
@@ -253,6 +259,10 @@ class HjsGrid {
             columnAfterSum.push(widthSum)
 
             if(colInfo.hidden !== true && colInfo.fixed !== true) widthSum += colInfo.width??100;
+            else if(colInfo.hidden !== true && colInfo.fixed === true){
+                leftWidthSum += colInfo.width??100;
+                leftColumnAfterSum.push(leftWidthSum)
+            }
 
             this.#columnsOption.get("visibleNextColumnIndex").set(colIdx,visibleNextColumnIndex);
 
@@ -260,6 +270,8 @@ class HjsGrid {
         }               
 
         widthSum = 0;
+        leftWidthSum = 0;
+        let leftIdx = 0;
 
         for(let colIdx=0;colIdx<this.#columns.length;colIdx++){
             let colInfo = this.#columns[colIdx]
@@ -282,7 +294,10 @@ class HjsGrid {
 
             if(colInfo.hidden !== true) lastVisibleColumn = colIdx;
 
-            
+            if(colInfo.fixed === true){
+                this.#columnsOption.get("leftRealColIndex").set(leftIdx,colIdx);
+                leftIdx++;
+            }
 
             if(colInfo.hidden !== true && colInfo.fixed !== true){
                 this.#columnsOption.get("bodyColumnRealIndex").set(bodyCnt,colIdx);
@@ -299,6 +314,10 @@ class HjsGrid {
 
             if(colInfo.hidden !== true  && colInfo.fixed !== true){
                 widthSum += colWidth;
+            }else if(colInfo.hidden !== true && colInfo.fixed === true){
+                leftColumnBeforeSum.push(leftWidthSum)
+                leftWidthSum += colWidth;
+                leftColumnWidth.push(leftWidthSum)
             }
 
             columnWidth.push(colWidth)
@@ -315,6 +334,10 @@ class HjsGrid {
         this.#columnsOption.set("columnWidth",columnWidth);           // 내 컬럼 width
         this.#columnsOption.set("columnBeforeSum",columnBeforeSum);   //나보다 앞에 width 합
         this.#columnsOption.set("columnAfterSum",columnAfterSum);   //나보다 뒤에 width 합
+
+        this.#columnsOption.set("leftColumnWidth",leftColumnWidth);           // 내 컬럼 width
+        this.#columnsOption.set("leftColumnBeforeSum",leftColumnBeforeSum);   //나보다 앞에 width 합
+        this.#columnsOption.set("leftColumnAfterSum",leftColumnAfterSum);   //나보다 뒤에 width 합
     }
 
     #setLayout = () => {
@@ -324,6 +347,7 @@ class HjsGrid {
 
         let containerEl = document.createElement("div");
         containerEl.classList.add("hjs-grid-container");
+        
         this.el.set("container",containerEl);
 
         this.el.get("main").append(containerEl)
@@ -520,9 +544,45 @@ class HjsGrid {
         let bodyEl = document.createElement("div");
         bodyEl.classList.add("hjs-grid-left-body");
 
+        this.#setNativeEvent(bodyEl,"touchstart",this.#gridLeftCellMouseDown,null,{passive:false})
+        this.#setNativeEvent(bodyEl,"mousedown",this.#gridLeftCellMouseDown,null,{passive:false})
+        this.#setNativeEvent(bodyEl,"touchmove",this.#gridLeftCellMouseMove)
+        this.#setNativeEvent(bodyEl,"mousemove",this.#gridLeftCellMouseMove)
+
         this.el.set("leftBody",bodyEl);
         
         this.el.get("left").append(bodyEl);
+
+        /**
+         * left body select
+         */
+        
+        let selectEl = document.createElement("div");
+        selectEl.classList.add("hjs-grid-left-body-select");
+
+        this.el.set("leftBodySelect",selectEl);
+
+        this.el.get("leftBody").append(selectEl);
+
+        let selectCurrentEl = document.createElement("div");
+
+        this.el.set("leftBodySelectCurrent",selectCurrentEl);
+
+        this.el.get("leftBody").append(selectCurrentEl);
+
+        this.#setNativeEvent(document.documentElement,"mouseup",this.#gridLeftCellMouseUp,null,{passive:false})
+        this.#setNativeEvent(document.documentElement,"mouseup",this.#gridLeftCellMouseUp,null,{passive:false})
+
+        /**
+         * left body contextmenu
+         */
+
+        let cmEl = document.createElement("div");
+        cmEl.classList.add("hjs-grid-left-body-context-menu");
+
+        this.el.set("leftBodyContextMenu",cmEl);
+        this.el.get("grid").append(cmEl);
+        //this.el.get("leftBodySelectCurrent").append(cmEl);
 
         /**
          * left body table
@@ -753,7 +813,10 @@ class HjsGrid {
         this.#renderLeftSummary();
         this.#renderLeftBody();
         this.#renderRight();   
-        if(option?.selectYn !== false) this.#renderBodySelect(this.#utils.get("select").get("bodySelectArray"));     
+        if(option?.selectYn !== false){
+            this.#renderLeftBodySelect(this.#utils.get("select").get("leftBodySelectArray"));
+            this.#renderBodySelect(this.#utils.get("select").get("bodySelectArray"));
+        }  
     }
 
     #renderLeftHeader = () => {
@@ -2189,6 +2252,7 @@ class HjsGrid {
     }
 
     #calcShowData = ()=>{
+        this.#utils.get("select").set("leftBodySelectArray",new Array());
         this.#utils.get("select").set("bodySelectArray",new Array());
 
         let showOrgData = this.#deepCopyData(this.#data.get("showOrgData"));
@@ -2261,6 +2325,80 @@ class HjsGrid {
         }
 
         return tempArray
+    }
+
+    #calcLeftBodySelect = (setYn=false) => {
+        let selectArray = this.#utils.get("select").get("leftBodySelectArray");
+        let selectInfo = this.#utils.get("select").get("leftBodySelectInfo");
+        let newSelectArray = new Array();
+
+        const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+        const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+    
+        if(this.#isUN(selectInfo) && selectArray.length>0){
+            selectInfo = selectArray[0];
+            selectInfo["deleteYn"] = false;
+        }
+    
+        for(let idx=0;idx<selectArray.length;idx++){
+            let sa = selectArray[idx];
+            
+            if(sa.startRowIndex > selectInfo.endRowIndex
+                || sa.endRowIndex < selectInfo.startRowIndex
+            ){
+                newSelectArray.push(sa)
+            }else{
+                /*선택한 박스의 시작 row가 기존 박스의 시작 row 보다 위에 있을 때*/
+                /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 위에 있을 때*/
+                
+                if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
+                && sa.endRowIndex >= selectInfo.endRowIndex){
+                    newSelectArray.push({
+                        deleteYn : false,
+                        startRowIndex : selectInfo.endRowIndex+1,
+                        endRowIndex : sa.endRowIndex,
+                        startColIndex : MIN_VISIBLE_COL,
+                        endColIndex : MAX_VISIBLE_COL
+                    })
+                }else if(sa.startRowIndex <= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
+                    && sa.endRowIndex >= selectInfo.startRowIndex && sa.endRowIndex >= selectInfo.endRowIndex){
+                    newSelectArray.push({
+                        deleteYn : false,
+                        startRowIndex : sa.startRowIndex,
+                        endRowIndex : selectInfo.startRowIndex-1,
+                        startColIndex : MIN_VISIBLE_COL,
+                        endColIndex : MAX_VISIBLE_COL
+                    })
+
+                    newSelectArray.push({
+                        deleteYn : false,
+                        startRowIndex : selectInfo.endRowIndex+1,
+                        endRowIndex : sa.endRowIndex,
+                        startColIndex : MIN_VISIBLE_COL,
+                        endColIndex : MAX_VISIBLE_COL
+                    })
+                }else if(sa.startRowIndex <= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
+                    && sa.endRowIndex >= selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex){
+                    newSelectArray.push({
+                        deleteYn : false,
+                        startRowIndex : sa.startRowIndex,
+                        endRowIndex : selectInfo.startRowIndex-1,
+                        startColIndex : MIN_VISIBLE_COL,
+                        endColIndex : MAX_VISIBLE_COL
+                    })
+                }
+            }
+        }
+        
+        if(selectInfo?.deleteYn === false) newSelectArray.push(selectInfo)
+    
+        this.#renderLeftBodySelect(newSelectArray);
+        this.#renderBodySelect(newSelectArray)
+    
+        if(setYn === true){
+            this.#utils.get("select").set("leftBodySelectArray",newSelectArray);
+            this.#utils.get("select").set("bodySelectArray",newSelectArray);                  
+        }
     }
 
     #calcBodySelect = (setYn=false) => {
@@ -2612,6 +2750,87 @@ class HjsGrid {
         if(setYn === true) this.#utils.get("select").set("bodySelectArray",newSelectArray);                
     }
 
+    #renderLeftBodySelect = (newSelectArray) => {
+        this.#removeChildAll(this.el.get("leftBodySelect"))
+    
+        let visibleArray = new Array();
+    
+        let START_ROW_INDEX = this.#utils.get("scroll").get("passedRowCount") 
+        const END_ROW_INDEX = Math.min(this.#utils.get("scroll").get("passedRowCount") + this.#utils.get("scroll").get("visibleRowCount"),this.#data.get("showData").length)
+        const LAST_ROW_FLAG = (END_ROW_INDEX === this.#data.get("showData").length && START_ROW_INDEX === this.#utils.get("scroll").get("scrollRowCount"))
+    
+        const EL_WIDTH = this.#utils.get("scroll").get("elWidth");
+        
+        let START_COL_INDEX, END_COL_INDEX, END_WIDTH, TOTAL_INDEX;
+        let START_WIDTH = 0;
+        let TOTAL_WIDTH = 0;
+        let SHOW_WIDTH = 0;
+    
+        const COL_TOTAL_COUNT = this.#columns.length;
+    
+        let beforeSum = this.#columnsOption.get("columnBeforeSum")
+        let columnWidth = this.#columnsOption.get("columnWidth")  
+    
+        START_COL_INDEX = this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount"));
+        END_COL_INDEX = this.#columnsOption.get("columnBeforeSum").filter(value=>{return value < this.#columnsOption.get("columnBeforeSum")[START_COL_INDEX] + EL_WIDTH}).length;
+        START_WIDTH = beforeSum[START_COL_INDEX];
+        TOTAL_WIDTH = beforeSum[beforeSum.length-1]+columnWidth[columnWidth.length-1];
+        SHOW_WIDTH = beforeSum[END_COL_INDEX]+columnWidth[END_COL_INDEX]-beforeSum[START_COL_INDEX];
+    
+        START_COL_INDEX = Math.max(Math.min(START_COL_INDEX,COL_TOTAL_COUNT),0)??0;
+        END_COL_INDEX = Math.max(Math.min(END_COL_INDEX,COL_TOTAL_COUNT),0);
+    
+        let LAST_COL_FLAG = (END_COL_INDEX === COL_TOTAL_COUNT && this.#columnsOption.get("visibleColIndex").get(START_COL_INDEX) === this.#utils.get("scroll").get("scrollColCount"))
+    
+        for(let idx=newSelectArray.length-1;idx>=0;idx--){
+            let sInfo = newSelectArray[idx];
+    
+            let divEl = document.createElement("div");
+            divEl.classList.add("hjs-grid-selected-cell-background")
+    
+            divEl.style.position = "absolute";
+            let top = (sInfo.startRowIndex - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height")
+            let height = ((sInfo.endRowIndex - sInfo.startRowIndex + 1)*this.#cell.get("height"))
+            let showTop = top<0?0:top;
+            let showHeight = top<0?height+top:height;
+    
+            divEl.style.top = showTop + "px"
+            divEl.style.height = showHeight + "px"
+            
+            let realColIdx = (!LAST_COL_FLAG)?this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")):this.#columnsOption.get("visiblePrevColumnIndex").get(this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")));
+            let left = (this.#columnsOption.get("columnBeforeSum")[sInfo.startColIndex] - this.#columnsOption.get("columnBeforeSum")[realColIdx]);
+            let width = (this.#columnsOption.get("columnBeforeSum")[sInfo.endColIndex]-this.#columnsOption.get("columnBeforeSum")[sInfo.startColIndex] + this.#columns[sInfo.endColIndex]?.width??0);
+            
+            let showLeft = left<0?0:left;
+            let showWidth = left<0?width+left:width;
+            divEl.style.left = showLeft + "px";
+            divEl.style.width = "100%";
+    
+            if(height !== 0 && width !== 0){
+                this.el.get("leftBodySelect").append(divEl)
+                visibleArray.push({
+                    divEl : divEl,
+                    top : top,
+                    height : height,
+                    showTop : showTop,
+                    showHeight : showHeight,
+                    left : left,
+                    width : width,
+                    showLeft : showLeft,
+                    showWidth : showWidth,
+                    index : idx,
+                })
+            }
+            else newSelectArray.splice(idx,1)                   
+        }
+        
+        if(visibleArray.length === 1){
+            if(visibleArray[0].showTop+visibleArray[0].showHeight>0 && visibleArray[0].showLeft+visibleArray[0].showWidth>0){
+                visibleArray[0].divEl.classList.add("hjs-grid-selected-cell-border")
+            }                    
+        }
+    }
+
     #renderBodySelect = (newSelectArray) => {
         this.#removeChildAll(this.el.get("middleBodySelect"))
 
@@ -2752,7 +2971,9 @@ class HjsGrid {
         }
     }
 
-    #createEditor = (rowIdx,colIdx) => {
+    #createEditor = (rowIdx,colIdx,leftYn=false,leftWidthSum) => {
+        let leftIdx = colIdx;
+        if(leftYn) colIdx = this.#columnsOption.get("leftRealColIndex").get(colIdx);
         let colType = this.getColumnType(colIdx);
         let editorEl;
         let showOrgRow = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx));
@@ -2794,49 +3015,91 @@ class HjsGrid {
         let rowId = this.#getIdByShowOrgDataIndex(showOrgRow)
         let colNm = this.#getColumnNameAndIndex(colIdx)[0]
 
-        this.#setNativeEvent(editorEl,"focusout",this.#editorFocusOut,[rowId,colNm,editorEl])
-        this.#setNativeEvent(editorEl,"keydown",this.#editorKeyDown,[rowId,colNm,editorEl])
-        this.#setNativeEvent(editorEl,"keyup",this.#editorKeyUp,[rowId,colNm,editorEl])
-
         editorEl.style.position = "absolute"
 
-        let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
-        //let height = Math.max(this.#cell.get("height"),50)
-        let height = this.#cell.get("height")
+        if(!leftYn){
+            this.#setNativeEvent(editorEl,"focusout",this.#editorFocusOut,[rowId,colNm,editorEl])
+            this.#setNativeEvent(editorEl,"keydown",this.#editorKeyDown,[rowId,colNm,editorEl])
+            this.#setNativeEvent(editorEl,"keyup",this.#editorKeyUp,[rowId,colNm,editorEl])
+            
+            let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
+            //let height = Math.max(this.#cell.get("height"),50)
+            let height = this.#cell.get("height")
 
-        const EL_HEIGHT = this.#utils.get("scroll").get("elHeight");
+            const EL_HEIGHT = this.#utils.get("scroll").get("elHeight");
+            
+            //editorEl.style.top = top + Math.min(EL_HEIGHT - (top + height),0) + "px"
+            //editorEl.style.height = height + "px"
+            editorEl.style.top = top + "px"
+            editorEl.style.height = height + "px"
+
+            let realColIdx = (this.el.get("middleBody").scrollLeft === 0)?this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")):this.#columnsOption.get("visiblePrevColumnIndex").get(this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")));
+            let left = (this.#columnsOption.get("columnBeforeSum")[curInfo.colIdx] - this.#columnsOption.get("columnBeforeSum")[realColIdx])
+            //let width = Math.max(this.#columns[colIdx].width,100)
+            let width = this.#columns[colIdx].width
+
+            const EL_WIDTH = this.#utils.get("scroll").get("elWidth");
         
-        //editorEl.style.top = top + Math.min(EL_HEIGHT - (top + height),0) + "px"
-        //editorEl.style.height = height + "px"
-        editorEl.style.top = top + "px"
-        editorEl.style.height = height + "px"
+            //editorEl.style.left = left + Math.min(EL_WIDTH - (left + width),0) + "px";
+            //editorEl.style.width = width + "px";    
+            editorEl.style.left = left + "px";
+            editorEl.style.width = width + "px";    
 
-        let realColIdx = (this.el.get("middleBody").scrollLeft === 0)?this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")):this.#columnsOption.get("visiblePrevColumnIndex").get(this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")));
-        let left = (this.#columnsOption.get("columnBeforeSum")[curInfo.colIdx] - this.#columnsOption.get("columnBeforeSum")[realColIdx])
-        //let width = Math.max(this.#columns[colIdx].width,100)
-        let width = this.#columns[colIdx].width
+            this.#utils.get("select").set("bodySelectCurrentElInfo",{
+                rowIdx : rowIdx,
+                colIdx : colIdx
+            })
+            
+            if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor"))){
+                this.el.get("middleBodySelectCurrentEditor").remove();
+            }
+            this.el.set("middleBodySelectCurrentEditor",editorEl);
+    
+            this.el.get("middleBodySelectCurrent").insertAdjacentElement("afterend",editorEl)
 
-        const EL_WIDTH = this.#utils.get("scroll").get("elWidth");
-       
-        //editorEl.style.left = left + Math.min(EL_WIDTH - (left + width),0) + "px";
-        //editorEl.style.width = width + "px";    
-        editorEl.style.left = left + "px";
-        editorEl.style.width = width + "px";    
+            editorEl.focus();
+        }else{
+            this.#setNativeEvent(editorEl,"focusout",this.#leftEditorFocusOut,[rowId,colNm,editorEl])
+            this.#setNativeEvent(editorEl,"keydown",this.#leftEditorKeyDown,[rowId,colNm,editorEl])
 
-        this.#utils.get("select").set("bodySelectCurrentElInfo",{
-            rowIdx : rowIdx,
-            colIdx : colIdx
-        })
+            let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
+            //let height = Math.max(this.#cell.get("height"),50)
+            let height = this.#cell.get("height")
 
-        
-        if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor"))){
-            this.el.get("middleBodySelectCurrentEditor").remove();
-        }
-        this.el.set("middleBodySelectCurrentEditor",editorEl);
+            const EL_HEIGHT = this.#utils.get("scroll").get("elHeight");
+            
+            //editorEl.style.top = top + Math.min(EL_HEIGHT - (top + height),0) + "px"
+            //editorEl.style.height = height + "px"
+            editorEl.style.top = top + "px"
+            editorEl.style.height = height + "px"
 
-        this.el.get("middleBodySelectCurrent").insertAdjacentElement("afterend",editorEl)
-        
-        editorEl.focus();
+            let left = leftWidthSum + this.#columnsOption.get("leftColumnBeforeSum")[leftIdx]
+            //let width = Math.max(this.#columns[colIdx].width,100)
+            let width = this.#columns[colIdx].width
+            
+            //editorEl.style.left = left + Math.min(EL_WIDTH - (left + width),0) + "px";
+            //editorEl.style.width = width + "px";    
+            editorEl.style.left = left + "px";
+            editorEl.style.width = width + "px";    
+
+            this.#utils.get("select").set("bodySelectCurrentElInfo",{
+                rowIdx : rowIdx,
+                colIdx : colIdx
+            })
+            
+            if(!this.#isUN(this.el.get("leftBodySelectCurrentEditor"))){
+                this.el.get("leftBodySelectCurrentEditor").remove();
+            }
+            this.el.set("leftBodySelectCurrentEditor",editorEl);
+
+            editorEl.style.opacity = "1"
+    
+            this.el.get("leftBodySelectCurrent").insertAdjacentElement("afterend",editorEl)
+
+            setTimeout(()=>{
+                editorEl.focus();
+            },50)
+        }        
     }
 
     #setNativeEvent = (el,eventName,func,param,option,beforeFunc)=>{
@@ -2872,6 +3135,13 @@ class HjsGrid {
     
     #getFullDataIndexById = id => {
         let data = this.#data.get("fullData");
+        for(let idx=0;idx<data.length;idx++){
+            if(data[idx]._id === id) return idx;
+        }
+    }
+
+    #getOrgDataIndexById = id => {
+        let data = this.#data.get("orgData");
         for(let idx=0;idx<data.length;idx++){
             if(data[idx]._id === id) return idx;
         }
@@ -2996,6 +3266,22 @@ class HjsGrid {
         return this.#lang[this.#utils.get("lang")][code];
     }
 
+    #getLeftSelectDeleteYn = (rowIdx,colIdx) => {
+        let selectArray = this.#utils.get("select").get("leftBodySelectArray");
+
+        for(let idx=0;idx<selectArray.length;idx++){
+            let sa = selectArray[idx];
+            console.log(sa.startRowIndex,sa.endRowIndex,rowIdx)
+            if(
+                sa.startRowIndex <= rowIdx && sa.endRowIndex >= rowIdx
+            ){
+                return true
+            }
+        }
+
+        return false;
+    }
+
     #getSelectDeleteYn = (rowIdx,colIdx) => {
         let selectArray = this.#utils.get("select").get("bodySelectArray");
 
@@ -3048,6 +3334,22 @@ class HjsGrid {
         return [curInfo?.rowIdx,curInfo?.colIdx]
     }
 
+    #getLeftCurrentSelectedArea = () => {
+        let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
+        let selectArray = this.#utils.get("select").get("leftBodySelectArray");
+
+        for(let idx=0;idx<selectArray.length;idx++){
+            let sa = selectArray[idx];
+
+            if(curInfo.rowIdx>=sa.startRowIndex && curInfo.rowIdx<=sa.endRowIndex){
+                sa["index"] = idx;
+                return sa;
+            }
+        }
+
+        return;
+    }
+
     #getCurrentSelectedArea = () => {
         let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
         let selectArray = this.#utils.get("select").get("bodySelectArray")
@@ -3088,6 +3390,7 @@ class HjsGrid {
         
         let showDataRow = this.#getShowDataIndexById(this.#getIdByShowOrgDataIndex(rowIdx));
         let fullDataRow = this.#getFullDataIndexById(this.#getIdByShowOrgDataIndex(rowIdx));
+        let orgDataRow = this.#getOrgDataIndexById(this.#getIdByShowOrgDataIndex(rowIdx));
 
         let showOrgData = this.#data.get("showOrgData")
 
@@ -3099,10 +3402,10 @@ class HjsGrid {
         let fullData = this.#data.get("fullData")
         let orgData = this.#data.get("orgData")
         
-        if(!this.#isUN(orgData[fullDataRow])){
+        if(!this.#isUN(orgData[orgDataRow])){
             if(showOrgData?.[rowIdx]?.["IUDFLAG"] === "I" || showOrgData?.[rowIdx]?.["IUDFLAG"] === "D") orgSameYn = false;
             else{
-                for(let [fKey,fValue] of Object.entries(orgData[fullDataRow])){
+                for(let [fKey,fValue] of Object.entries(orgData[orgDataRow])){
                     if(typeof fValue === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
                     if((fKey===colName && fValue !== value) || (fKey!==colName && fValue !== showOrgData?.[rowIdx]?.[fKey])){
                         orgSameYn = false;
@@ -3846,14 +4149,692 @@ class HjsGrid {
             this.#renderGrid()
         }
 
+        if(this.#utils.get("select").get("leftBodySelectFlag") === true){
+            this.#gridLeftCellMouseMove(e)
+        }
+
         if(this.#utils.get("select").get("bodySelectFlag") === true){
             this.#gridCellMouseMove(e)
+        }
+    }
+
+    #gridLeftCellMouseDown = (e) => {
+        if(e.target.classList.contains("hjs-grid-selected-handle")) return;
+        const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
+        
+        if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
+            e.preventDefault();
+            this.#utils.get("select").set("leftBodySelectYn",true);
+            this.el.get("leftBody").scrollLeft = this.#utils.get("scroll").get("scrollLeft")
+
+            let doubleClickYn = false;
+
+            if(this.#utils.get("current").get("leftFirstClick") === false && !RIGHT_FLAG){
+                this.#utils.get("current").set("leftFirstClick",true)
+                this.#utils.get("current").set("leftFirstClickTarget",e.target)
+                if(!this.#isUN(this.el.get("leftBodySelectCurrentEditor"))){
+                    this.el.get("leftBodySelectCurrentEditor").remove();
+                }
+                setTimeout(()=>{
+                    this.#utils.get("current").set("leftFirstClick",false);
+                },200)
+            }else if(this.#utils.get("current").get("leftFirstClick") === true && !RIGHT_FLAG){
+                doubleClickYn = true
+            }
+    
+            this.#utils.get("select").set("target",e.target);
+            let bodyEl = this.el.get("leftBody");
+            let clientX = Math.round((e.type==="touchstart"?e.touches[0].clientX:e.clientX)-bodyEl.getBoundingClientRect().x+1);
+            let clientY = Math.round((e.type==="touchstart"?e.touches[0].clientY:e.clientY)-bodyEl.getBoundingClientRect().y);
+    
+            let rowIdx = ((this.el.get("leftBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1) + Math.floor((clientY+this.el.get("leftBody").scrollTop)/this.#cell.get("height"));
+            rowIdx=Math.min(rowIdx,this.#data.get("showData").length-1)
+    
+            let passedX;
+            if(this.el.get("leftBody").scrollLeft === 0) passedX = this.#columnsOption.get("columnBeforeSum")[this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount"))]
+            else passedX = this.#columnsOption.get("columnBeforeSum")[this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")-1)]
+    
+            let colIdx;
+            let checkboxWidth = (this.#isUN(this.#option.get("left")?.checkbox))?0:this.#option.get("left").checkbox?.width??42;
+            let rowNumberWidth = (this.#isUN(this.#option.get("left")?.rowNumber))?0:this.#option.get("left").rowNumber?.width??50;
+            let rowStatusWidth = (this.#isUN(this.#option.get("left")?.rowStatus))?0:this.#option.get("left").rowStatus?.width??50;
+    
+            let checkboxFlag = !this.#isUN(this.#left.get("checkbox"));
+            let rowNumberFlag = !this.#isUN(this.#left.get("rowNumber"));
+            let rowStatusFlag = !this.#isUN(this.#left.get("rowStatus"));
+    
+            let orderArray = this.#isUN(this.#left.get("order"))?["checkbox","rowNumber","rowStatus"]:this.#left.get("order");
+    
+            let leftWidthSum = 0;
+            let leftNum = 0;
+            
+            for(let idx=0;idx<orderArray.length;idx++){
+                let order = orderArray[idx];
+    
+                if(order === "checkbox" && checkboxFlag){
+                    leftWidthSum += checkboxWidth
+                    leftNum++;
+                }else if(order === "rowNumber" && rowNumberFlag){
+                    leftWidthSum += rowNumberWidth
+                    leftNum++;
+                }else if(order === "rowStatus" && rowStatusFlag){
+                    leftWidthSum += rowStatusWidth
+                    leftNum++;
+                }
+                
+                if(clientX-1<leftWidthSum){
+                    colIdx = 0-leftNum;
+                    break;
+                }
+            }
+            
+            if(this.#isUN(colIdx)){
+                colIdx = this.#columnsOption.get("leftColumnBeforeSum").filter(item=>item<clientX-leftWidthSum+this.el.get("middleBody").scrollLeft).length-1;
+            }
+
+            if(doubleClickYn){
+                if(colIdx>=0) this.#createEditor(rowIdx,colIdx,true,leftWidthSum);
+            }
+
+            if(colIdx<0){
+                if(orderArray[(colIdx*-1)-1] === "checkbox"){
+                    // left checkbox
+                    let clickX = bodyEl.getBoundingClientRect().x+clientX;
+                    let clickY = bodyEl.getBoundingClientRect().y+clientY;
+
+                    let checkInfo = this.el.get("checkbox").get(rowIdx).getBoundingClientRect();
+                    let checkX = checkInfo.left;
+                    let checkY = checkInfo.top;
+                    let checkWidth = checkInfo.width;
+                    let checkHeight = checkInfo.height;
+
+                    if(checkX<=clickX && clickX <= checkX+checkWidth && checkY <= clickY && clickY <= checkY + checkHeight){
+                        let checked = this.el.get("checkbox").get(rowIdx).checked;
+                        this.el.get("checkbox").get(rowIdx).checked = !checked
+                        if(checked) this.#utils.get("checkedRow").delete(this.#getIdByShowDataIndex(rowIdx));
+                        else this.#utils.get("checkedRow").set(this.#getIdByShowDataIndex(rowIdx),true);
+                        
+                        this.el.get("checkboxAll").checked = (this.#utils.get("checkedRow").keys().toArray().length === this.#data.get("showData").length) 
+                        
+                        this.#reRenderGrid();
+                    }
+                }
+            }
+
+            const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+            const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+            this.#utils.get("select").set("leftBodySelectFlag",true)
+            this.#utils.get("select").set("leftBodySelectCtrlFlag",e.ctrlKey);
+    
+            let deleteYn = (!e.ctrlKey)?false:this.#getLeftSelectDeleteYn(rowIdx,colIdx);
+            
+            if(!RIGHT_FLAG){
+                if(e.type==="mousedown" && !e.ctrlKey){
+                    if(e.type==="mousedown" && e.shiftKey){
+                        let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
+                        let sa = this.#getLeftCurrentSelectedArea();
+                        let selectArray = this.#utils.get("select").get("leftBodySelectArray");
+    
+                        if(!this.#isUN(sa)){
+                            selectArray[sa.index].startRowIndex = Math.min(curInfo.rowIdx,rowIdx)
+                            selectArray[sa.index].endRowIndex = Math.max(curInfo.rowIdx,rowIdx)
+                            selectArray[sa.index].startColIndex = MIN_VISIBLE_COL
+                            selectArray[sa.index].endColIndex = MAX_VISIBLE_COL
+    
+                            this.#utils.get("select").set("leftBodySelectArray",selectArray);
+                        }                               
+                    }else this.#utils.get("select").set("leftBodySelectArray",new Array());
+                }else{
+                    if(e.type==="touchstart"){
+                        this.#utils.get("select").set("leftBodySelectArray",[{
+                            deleteYn : deleteYn,
+                            startRowIndex : rowIdx,
+                            endRowIndex : rowIdx,
+                            startColIndex : colIdx,
+                            endColIndex : colIdx
+                        }]);
+                        
+                        if(!e.target.classList.contains("hjs-grid-editor")) this.#utils.get("select").set("leftBodySelectFlag",false)
+                        else this.#utils.get("select").set("leftBodySelectArray",new Array());
+                    }
+                }
+            }
+    
+            if(deleteYn === false){
+                if(!e.shiftKey){
+                    this.#utils.get("select").set("leftBodySelectCurrentInfo",{
+                        rowIdx : rowIdx,
+                        colIdx : colIdx,
+                    });
+
+                    this.#utils.get("select").set("bodySelectCurrentInfo",{
+                        rowIdx : rowIdx,
+                        colIdx : MIN_VISIBLE_COL,
+                    });
+                }
+            }
+    
+            let rightClear = false;
+            let sa = this.#getLeftCurrentSelectedArea();
+            let selectArray = this.#utils.get("select").get("leftBodySelectArray")
+    
+            this.el.get("middleBodyContextMenu").style.opacity = "0"
+
+            if(RIGHT_FLAG && colIdx >= 0){
+                // right click
+                if(this.#isUN(sa)){
+                    this.#utils.get("select").set("leftBodySelectArray",new Array());
+                }else rightClear = true;
+                this.el.get("leftBodyContextMenu").style.opacity = "1"
+            }else{
+                this.#removeChildAll(this.el.get("leftBodyContextMenu"))
+                this.el.get("leftBodyContextMenu").style.opacity = "0"
+            }
+    
+            if(!e.shiftKey){
+                if(!rightClear){
+                    this.#utils.get("select").set("leftBodySelectInfo",{
+                        deleteYn : deleteYn,
+                        startRowIndex : rowIdx,
+                        endRowIndex : rowIdx,
+                        startColIndex : MIN_VISIBLE_COL,
+                        endColIndex : MAX_VISIBLE_COL
+                    });
+                }else{
+                    this.#utils.get("select").set("leftBodySelectInfo",null);
+                }
+            }
+            
+    
+            if(!e.shiftKey && !rightClear) this.#utils.get("select").set("leftBodySelectStartInfo",{
+                rowIdx : rowIdx,
+                colIdx : colIdx,
+            });
+    
+            // if(RIGHT_FLAG && colIdx >= 0){
+            //     // right click
+            //     e.preventDefault();
+            //     const CONTEXT_MENU_TARGET = this.el.get("leftBodyContextMenu");
+    
+            //     let cmMenuArray = new Array();
+    
+            //     let ccpArray = new Array();
+            //     // cut
+            //     ccpArray.push({
+            //         title : this.#getMessage("rc001"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //                 if(this.#ctrlCKeyFunction("002")!==false) this.#deleteKeyFunction(rowIdx,colIdx);
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     // copy
+            //     ccpArray.push({
+            //         title :this.#getMessage("rc002"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //                 this.#ctrlCKeyFunction("001")
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     // paste
+            //     ccpArray.push({
+            //         title : this.#getMessage("rc003"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //                 console.log(this.#pasteText());
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     cmMenuArray.push(ccpArray);
+    
+            //     let urArray = new Array();
+            //     // undo
+            //     urArray.push({
+            //         title : this.#getMessage("rc011"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //                 this.#ctrlZKeyFunction(e);
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     // redo
+            //     urArray.push({
+            //         title : this.#getMessage("rc012"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //                 this.#ctrlYKeyFunction(e);
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     cmMenuArray.push(urArray);
+    
+            //     let selArray = new Array();
+            //     // select all
+            //     selArray.push({
+            //         title : this.#getMessage("rc004"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //                 this.#ctrlAKeyFunction(e);
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     // delete all
+            //     selArray.push({
+            //         title : this.#getMessage("rc005"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //                 this.#deleteKeyFunction(rowIdx,colIdx);
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     cmMenuArray.push(selArray);
+    
+            //     let rowArray = new Array();
+            //     // 행 삽입
+    
+            //     rowArray.push({
+            //         title :this.#getMessage("rc006"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //             }
+            //         },
+            //         childs : [
+            //             [
+            //                 {
+            //                     title : this.#getMessage("rc006-1"),
+            //                     events : {
+            //                         mousedown : (e) => {
+            //                             e.preventDefault();
+            //                             if(this.#isUN(sa)){
+            //                                 let showOrgCurRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))
+            //                                 this.#insertRow(showOrgCurRowIdx,true)
+            //                             }else if(selectArray.length > 1) return alert(this.#getMessage("rc006-3"));
+            //                             else{
+            //                                 let showOrgCurRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(sa.startRowIndex));
+                                            
+            //                                 let undoNumber = this.#utils.get("undoNumber")+1;
+            //                                 this.#utils.set("undoNumber",undoNumber)
+    
+            //                                 for(let idx=sa.startRowIndex;idx<=sa.endRowIndex;idx++){
+            //                                     this.#insertRow(showOrgCurRowIdx,true,null,true,undoNumber)
+            //                                 }
+    
+            //                                 const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+            //                                 const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+    
+            //                                 this.#utils.get("undoArray").push({
+            //                                     "type"          : "selectRedo",
+            //                                     "undoNumber"    : undoNumber,
+            //                                     "selectArray"   : [{
+            //                                         deleteYn : false,
+            //                                         startRowIndex : sa.startRowIndex,
+            //                                         endRowIndex : sa.endRowIndex,
+            //                                         startColIndex : MIN_VISIBLE_COL,
+            //                                         endColIndex : MAX_VISIBLE_COL
+            //                                     }],
+            //                                     "curInfo"       : {
+            //                                         rowIdx : selectArray?.[0]?.startRowIndex,
+            //                                         colIdx : MIN_VISIBLE_COL
+            //                                     }
+            //                                 })
+            //                             }
+                                        
+            //                             this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                             CONTEXT_MENU_TARGET.style.opacity = "0"
+            //                         }
+            //                     }
+            //                 },
+            //                 {
+            //                     title : this.#getMessage("rc006-2"),
+            //                     events : {
+            //                         mousedown : (e) => {
+            //                             e.preventDefault();
+            //                             if(this.#isUN(sa)){
+            //                                 let showOrgCurRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))
+            //                                 this.#insertRow(showOrgCurRowIdx,false)
+            //                             }else if(selectArray.length > 1) return alert(this.#getMessage("rc006-3"));
+            //                             else{
+            //                                 let showOrgCurRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(sa.endRowIndex))
+    
+            //                                 let undoNumber = this.#utils.get("undoNumber")+1;
+            //                                 this.#utils.set("undoNumber",undoNumber)
+    
+            //                                 let insertCnt = 0;
+    
+            //                                 for(let idx=sa.startRowIndex;idx<=sa.endRowIndex;idx++){
+            //                                     this.#insertRow(showOrgCurRowIdx,false,null,true,undoNumber)
+            //                                     insertCnt++;
+            //                                 }
+    
+            //                                 const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+            //                                 const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+    
+            //                                 this.#utils.get("undoArray").push({
+            //                                     "type"          : "selectRedo",
+            //                                     "undoNumber"    : undoNumber,
+            //                                     "selectArray"   : [{
+            //                                         deleteYn : false,
+            //                                         startRowIndex : sa.startRowIndex+insertCnt,
+            //                                         endRowIndex : sa.endRowIndex+insertCnt,
+            //                                         startColIndex : MIN_VISIBLE_COL,
+            //                                         endColIndex : MAX_VISIBLE_COL
+            //                                     }],
+            //                                     "curInfo"       : {
+            //                                         rowIdx : selectArray?.[0]?.startRowIndex,
+            //                                         colIdx : MIN_VISIBLE_COL
+            //                                     }
+            //                                 })
+            //                             }
+            //                             this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                             CONTEXT_MENU_TARGET.style.opacity = "0"
+            //                         }
+            //                     }
+            //                 }
+            //             ]
+            //         ]
+            //     })
+    
+            //     // 행 삭제
+            //     rowArray.push({
+            //         title : this.#getMessage("rc007"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+            //                 if(this.#isUN(sa)){
+            //                     let showOrgCurRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))
+            //                     this.#removeRow(showOrgCurRowIdx)
+            //                 }else{
+            //                     let removeRowArray = {};
+    
+            //                     let undoNumber = this.#utils.get("undoNumber")+1;
+            //                     this.#utils.set("undoNumber",undoNumber)
+    
+            //                     let curSelectArray = this.#deepCopy(selectArray)
+    
+            //                     const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+            //                     const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+    
+            //                     for(let i=0;i<selectArray.length;i++){
+            //                         let sea = selectArray[i];
+            //                         let endRowIndex = sea.endRowIndex;
+            //                         let startRowIndex = sea.startRowIndex
+            //                         for(let idx=endRowIndex;idx>=startRowIndex;idx--){
+            //                             let showOrgCurRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(idx))
+            //                             this.#removeRow(showOrgCurRowIdx,true,true,undoNumber)
+            //                         }
+    
+            //                         curSelectArray[i].startColIndex = MIN_VISIBLE_COL;
+            //                         curSelectArray[i].endColIndex = MAX_VISIBLE_COL;
+            //                     }
+    
+            //                     this.#utils.get("undoArray").push({
+            //                         "type"          : "selectUndo",
+            //                         "undoNumber"    : undoNumber,
+            //                         "selectArray"   : curSelectArray,
+            //                         "curInfo"       : {
+            //                             rowIdx : selectArray?.[0]?.startRowIndex,
+            //                             colIdx : selectArray?.[0]?.startColIndex
+            //                         }
+            //                     })
+            //                 }
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     cmMenuArray.push(rowArray);
+    
+            //     let colArray = new Array();
+            //     //열 삽입
+                
+            //     if(this.#isUN(sa) || (!this.#isUN(sa) && sa?.startColIndex === sa?.endColIndex && sa?.startColIndex === colIdx && selectArray.length === 1)){
+            //         colArray.push({
+            //             title : this.#getMessage("rc013"),
+            //             childs : [
+            //                 [
+            //                     {
+            //                         title : this.#getMessage("rc013-1"),
+            //                         childs : [
+            //                             [
+            //                                 {
+            //                                     customRenderer : () => { 
+            //                                         let colNm = this.#getColumnNameAndIndex(colIdx)[0]
+            //                                         return this.#createInsertColumnOption(colNm,false);
+            //                                     }
+            //                                 }
+            //                             ]
+            //                         ]
+            //                     },
+            //                     {
+            //                         title : this.#getMessage("rc013-2"),
+            //                         childs : [
+            //                             [
+            //                                 {
+            //                                     customRenderer : () => { 
+            //                                         let colNm = this.#getColumnNameAndIndex(colIdx)[0]
+            //                                         return this.#createInsertColumnOption(colNm,true);
+            //                                     }
+            //                                 }
+            //                             ]
+            //                         ]
+            //                     }
+            //                 ]
+            //             ]
+            //         })
+            //     }
+                
+    
+            //     //열 삭제
+            //     colArray.push({
+            //         title : this.#getMessage("rc008"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();
+    
+            //                 if(this.#isUN(sa)){
+            //                     let colNm = this.#getColumnNameAndIndex(colIdx)[0]
+            //                     this.removeColumn(colNm)
+            //                 }else{
+            //                     let undoNumber = this.#utils.get("undoNumber")+1;
+            //                     this.#utils.set("undoNumber",undoNumber)
+    
+            //                     let curSelectArray = this.#deepCopy(selectArray)
+                                
+            //                     for(let i=0;i<selectArray.length;i++){
+            //                         let sea = selectArray[i];
+            //                         for(let idx=sea.endColIndex;idx>=sea.startColIndex;idx--){
+            //                             if(this.#columns[idx].hidden === true || this.#columns[idx].fixed === true) continue;
+            //                             this.#removeColumn(idx,true,undoNumber)
+            //                         }
+    
+            //                         curSelectArray[i].startRowIndex = 0;
+            //                         curSelectArray[i].endRowIndex = this.#data.get("showOrgData").length-1;
+            //                     }
+    
+            //                     this.#utils.get("undoArray").push({
+            //                         "type"          : "selectUndo",
+            //                         "undoNumber"    : undoNumber,
+            //                         "selectArray"   : curSelectArray,
+            //                         "curInfo"       : {
+            //                             rowIdx : 0,
+            //                             colIdx : selectArray?.[0]?.startColIndex
+            //                         }
+            //                     })
+            //                 }
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     // 열 숨기기
+            //     colArray.push({
+            //         title : this.#getMessage("rc009"),
+            //         events : {
+            //             mousedown : (e) => {
+            //                 e.preventDefault();   
+    
+            //                 if(this.#isUN(sa)){
+            //                     let colNm = this.#getColumnNameAndIndex(colIdx)[0]
+            //                     this.hideColumn(colNm)
+            //                 }else{
+            //                     let undoNumber = this.#utils.get("undoNumber")+1;
+            //                     this.#utils.set("undoNumber",undoNumber)
+    
+            //                     let curSelectArray = this.#deepCopy(selectArray)
+    
+            //                     for(let i=0;i<selectArray.length;i++){
+            //                         let sea = selectArray[i];
+            //                         for(let idx=sea.endColIndex;idx>=sea.startColIndex;idx--){
+            //                             if(this.#columns[idx].hidden === true || this.#columns[idx].fixed === true) continue;
+            //                             this.#showHideColumn(idx,true,true,undoNumber)
+            //                         }
+    
+            //                         curSelectArray[i].startRowIndex = 0;
+            //                         curSelectArray[i].endRowIndex = this.#data.get("showOrgData").length-1;
+            //                     }
+    
+            //                     this.#utils.get("undoArray").push({
+            //                         "type"          : "selectUndo",
+            //                         "undoNumber"    : undoNumber,
+            //                         "selectArray"   : curSelectArray,
+            //                         "curInfo"       : {
+            //                             rowIdx : 0,
+            //                             colIdx : selectArray?.[0]?.startColIndex
+            //                         }
+            //                     })
+            //                 }
+                            
+            //                 this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                 CONTEXT_MENU_TARGET.style.opacity = "0"
+            //             }
+            //         }
+            //     })
+    
+            //     // 숨긴 열 보이기
+            //     if(!this.#isUN(sa) && selectArray.length === 1){
+            //         let hiddenFlag = false;
+            //         for(let idx=sa.endColIndex;idx>=sa.startColIndex;idx--){
+            //             if(this.#columns[idx].fixed === true) continue;
+            //             if(this.#columns[idx].hidden === true){
+            //                 hiddenFlag = true;
+            //                 break;
+            //             }
+            //         }
+    
+            //         if(hiddenFlag){
+            //             colArray.push({
+            //                 title : this.#getMessage("rc010"),
+            //                 events : {
+            //                     mousedown : (e) => {
+            //                         e.preventDefault();   
+    
+            //                         if(this.#isUN(sa)){
+            //                             let colNm = this.#getColumnNameAndIndex(colIdx)[0]
+            //                             this.showColumn(colNm)
+            //                         }else{
+            //                             if(selectArray.length > 1) return alert(this.#getMessage("rc010-1"));
+                                        
+            //                             let undoNumber = this.#utils.get("undoNumber")+1;
+            //                             this.#utils.set("undoNumber",undoNumber)
+    
+            //                             let curSelectArray = this.#deepCopy(selectArray)
+    
+            //                             let minCol = sa.startColIndex;
+            //                             let maxCol = sa.endColIndex;
+    
+            //                             for(let idx=sa.endColIndex;idx>=sa.startColIndex;idx--){
+            //                                 if(this.#columns[idx].fixed === true || idx === sa.endColIndex || idx === sa.startColIndex) continue;
+            //                                 minCol = Math.min(minCol,idx);
+            //                                 this.#showHideColumn(idx,false,true,undoNumber)
+            //                             }
+            //                             curSelectArray[0].startRowIndex = 0;
+            //                             curSelectArray[0].endRowIndex = this.#data.get("showOrgData").length-1;
+    
+            //                             this.#utils.get("undoArray").push({
+            //                                 "type"          : "selectUndo",
+            //                                 "undoNumber"    : undoNumber,
+            //                                 "selectArray"   : curSelectArray,
+            //                                 "curInfo"       : {
+            //                                     rowIdx : 0,
+            //                                     colIdx : minCol
+            //                                 }
+            //                             })
+            //                         }
+                                    
+            //                         this.#removeChildAll(CONTEXT_MENU_TARGET)
+            //                         CONTEXT_MENU_TARGET.style.opacity = "0"
+            //                     }
+            //                 }
+            //             })
+            //         }
+            //     }
+    
+            //     cmMenuArray.push(colArray);
+    
+            //     new HjsContextMenu({
+            //         el : CONTEXT_MENU_TARGET,
+            //         data : cmMenuArray
+            //     })                        
+    
+            //     let tableInfo = this.el.get("leftBodyTable").getBoundingClientRect();
+            //     let passedRowCount = ((this.el.get("leftBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1)
+    
+            //     CONTEXT_MENU_TARGET.style.left = (e.clientX/*-tableInfo.left-(this.#columnsOption.get("columnBeforeSum")[colIdx]-passedX)*/) + "px"
+            //     CONTEXT_MENU_TARGET.style.top = (e.clientY/*-tableInfo.top-(rowIdx-passedRowCount)*this.#cell.get("height")*/) + "px"
+            // }
+            
+            this.#calcLeftBodySelect();
         }
     }
 
     #gridCellMouseDown = (e) => {
         if(e.target.classList.contains("hjs-grid-selected-handle")) return;
         const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
+        let shiftFlag = e.shiftKey;
+        let ctrlFlag = e.ctrlKey;
+
         if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
             e.preventDefault();
             this.el.get("middleBody").scrollLeft = this.#utils.get("scroll").get("scrollLeft")
@@ -3888,6 +4869,15 @@ class HjsGrid {
                 }
             }
 
+            let leftFlag = this.#utils.get("select").get("leftBodySelectArray").length > 0
+
+            if(leftFlag){
+                this.#utils.get("select").set("leftBodySelectArray",new Array())
+                this.#utils.get("select").set("bodySelectArray",new Array())
+                shiftFlag = false;
+                ctrlFlag = false;
+            }
+
             this.#utils.get("select").set("target",e.target);
             let bodyEl = this.el.get("middleBody");
             let clientX = Math.round((e.type==="touchstart"?e.touches[0].clientX:e.clientX)-bodyEl.getBoundingClientRect().x+1);
@@ -3903,13 +4893,13 @@ class HjsGrid {
             let colIdx = this.#columnsOption.get("columnBeforeSum").filter(item=>item<passedX+clientX+this.el.get("middleBody").scrollLeft).length-1;
             
             this.#utils.get("select").set("bodySelectFlag",true)
-            this.#utils.get("select").set("bodySelectCtrlFlag",e.ctrlKey);
+            this.#utils.get("select").set("bodySelectCtrlFlag",ctrlFlag);
 
-            let deleteYn = (!e.ctrlKey)?false:this.#getSelectDeleteYn(rowIdx,colIdx);
+            let deleteYn = (!ctrlFlag)?false:this.#getSelectDeleteYn(rowIdx,colIdx);
             
             if(!RIGHT_FLAG){
-                if(e.type==="mousedown" && !e.ctrlKey){
-                    if(e.type==="mousedown" && e.shiftKey){
+                if(e.type==="mousedown" && !ctrlFlag){
+                    if(e.type==="mousedown" && shiftFlag){
                         let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
                         let sa = this.#getCurrentSelectedArea();
                         let selectArray = this.#utils.get("select").get("bodySelectArray");
@@ -3940,7 +4930,7 @@ class HjsGrid {
             }
 
             if(deleteYn === false){
-                if(!e.shiftKey){
+                if(!shiftFlag){
                     this.#utils.get("select").set("bodySelectCurrentInfo",{
                         rowIdx : rowIdx,
                         colIdx : colIdx,
@@ -3963,7 +4953,7 @@ class HjsGrid {
                 this.el.get("middleBodyContextMenu").style.opacity = "0"
             }
 
-            if(!e.shiftKey){
+            if(!shiftFlag){
                 if(!rightClear){
                     this.#utils.get("select").set("bodySelectInfo",{
                         deleteYn : deleteYn,
@@ -3978,7 +4968,7 @@ class HjsGrid {
             }
             
 
-            if(!e.shiftKey && !rightClear) this.#utils.get("select").set("bodySelectStartInfo",{
+            if(!shiftFlag && !rightClear) this.#utils.get("select").set("bodySelectStartInfo",{
                 rowIdx : rowIdx,
                 colIdx : colIdx,
             });
@@ -4456,7 +5446,88 @@ class HjsGrid {
                 CONTEXT_MENU_TARGET.style.top = (e.clientY/*-tableInfo.top-(rowIdx-passedRowCount)*this.#cell.get("height")*/) + "px"
             }
             
+            if(leftFlag){
+                this.#calcLeftBodySelect();
+                this.#reRenderGrid();
+                this.#utils.get("select").set("leftBodySelectYn",false)
+            }
+            
             this.#calcBodySelect();
+            
+        }
+    }
+
+    #gridLeftCellMouseMove = (e) => {
+        const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
+        if(RIGHT_FLAG) return;
+        if(this.#utils.get("select").get("leftBodySelectFlag") === true){
+            if(e.type === "touchmove"){
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            let bodyEl = this.el.get("leftBody");
+            let clientX = Math.round((e.type==="touchmove"?e.touches[0].clientX:e.clientX)-bodyEl.getBoundingClientRect().x+1);
+            let clientY = Math.round((e.type==="touchmove"?e.touches[0].clientY:e.clientY)-bodyEl.getBoundingClientRect().y);
+    
+            let rowIdx = ((this.el.get("leftBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1) + Math.floor((clientY+this.el.get("leftBody").scrollTop)/this.#cell.get("height"));
+            rowIdx=Math.min(rowIdx,this.#data.get("showData").length-1)
+    
+            let passedX;
+            if(this.el.get("leftBody").scrollLeft === 0) passedX = this.#columnsOption.get("columnBeforeSum")[this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount"))]
+            else passedX = this.#columnsOption.get("columnBeforeSum")[this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")-1)]
+    
+            let colIdx;
+            let checkboxWidth = (this.#isUN(this.#option.get("left")?.checkbox))?0:this.#option.get("left").checkbox?.width??42;
+            let rowNumberWidth = (this.#isUN(this.#option.get("left")?.rowNumber))?0:this.#option.get("left").rowNumber?.width??50;
+            let rowStatusWidth = (this.#isUN(this.#option.get("left")?.rowStatus))?0:this.#option.get("left").rowStatus?.width??50;
+    
+            let checkboxFlag = !this.#isUN(this.#left.get("checkbox"));
+            let rowNumberFlag = !this.#isUN(this.#left.get("rowNumber"));
+            let rowStatusFlag = !this.#isUN(this.#left.get("rowStatus"));
+    
+            let orderArray = this.#isUN(this.#left.get("order"))?["checkbox","rowNumber","rowStatus"]:this.#left.get("order");
+    
+            let leftWidthSum = 0;
+            let leftNum = 0;
+            
+            for(let idx=0;idx<orderArray.length;idx++){
+                let order = orderArray[idx];
+    
+                if(order === "checkbox" && checkboxFlag){
+                    leftWidthSum += checkboxWidth
+                    leftNum++;
+                }else if(order === "rowNumber" && rowNumberFlag){
+                    leftWidthSum += rowNumberWidth
+                    leftNum++;
+                }else if(order === "rowStatus" && rowStatusFlag){
+                    leftWidthSum += rowStatusWidth
+                    leftNum++;
+                }
+                
+                if(clientX-1<leftWidthSum){
+                    colIdx = 0-leftNum;
+                    break;
+                }
+            }
+            
+            if(this.#isUN(colIdx)){
+                colIdx = this.#columnsOption.get("leftColumnBeforeSum").filter(item=>item<clientX-leftWidthSum+this.el.get("middleBody").scrollLeft).length-1;
+            }
+    
+            let selectJson = this.#utils.get("select").get("leftBodySelectInfo");
+            let startJson = this.#utils.get("select").get("leftBodySelectStartInfo")
+
+            const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+            const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+    
+            selectJson.startRowIndex = Math.min(startJson.rowIdx,rowIdx);
+            selectJson.endRowIndex = Math.max(startJson.rowIdx,rowIdx);
+            selectJson.startColIndex = MIN_VISIBLE_COL;
+            selectJson.endColIndex = MAX_VISIBLE_COL;
+    
+            this.#utils.get("select").set("leftBodySelectInfo",selectJson);
+    
+            this.#calcLeftBodySelect();
         }
     }
 
@@ -4492,6 +5563,15 @@ class HjsGrid {
             this.#utils.get("select").set("bodySelectInfo",selectJson);
 
             this.#calcBodySelect();
+        }
+    }
+
+    #gridLeftCellMouseUp = e => {
+        if(this.#utils.get("select").get("leftBodySelectFlag") === true){
+            this.#utils.get("select").set("leftBodySelectFlag",false)
+            this.#utils.get("select").set("leftBodySelectCtrlFlag",false);
+            
+            this.#calcLeftBodySelect(true);
         }
     }
 
@@ -5841,6 +6921,18 @@ class HjsGrid {
         this.#utils.get("filterInfo").delete("filterEventEndTs");
     }
 
+    #leftEditorFocusOut = (e,rowId,colNm,editorEl)=> {
+        this.el.get("leftBodySelectCurrentEditor").style.opacity = "0";
+
+        let rowIdx = this.#getShowOrgDataIndexById(rowId);
+
+        if(this.#utils.get("editor").get("setValueFlag")) this.setCellValue(rowIdx,colNm,editorEl.value)
+
+        if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor"))){
+            this.el.get("middleBodySelectCurrentEditor").focus();
+        }
+    }
+
     #editorFocusOut = (e,rowId,colNm,editorEl)=> {
         e.preventDefault();
         e.stopPropagation();
@@ -5881,6 +6973,199 @@ class HjsGrid {
 
         editorEl.style.opacity = "0"
         editorEl.setAttribute("inputmode","none");
+    }
+
+    #leftEditorKeyDown = (e,rowId,colNm,editorEl)=> {
+        if(e.ctrlKey && e.keyCode === 17) return;
+        if(e.shiftKey && e.keyCode === 16) return;
+
+        let rowIdx = this.#getShowOrgDataIndexById(rowId)
+        let colIdx = this.#getColumnNameAndIndex(colNm)?.[1];
+
+        this.#removeChildAll(this.el.get("middleBodyContextMenu"))
+        this.el.get("middleBodyContextMenu").style.opacity = "0"
+        
+        if(e.keyCode === 13){   // enter
+            
+            console.log(editorEl)
+            if(e.altKey){
+                let tempInput = document.createElement("input")
+                this.#utils.get("editor").set("setValueFlag",false);
+                editorEl.insertAdjacentElement("afterend",tempInput)
+                tempInput.focus();
+                tempInput.remove();
+                const cursorPos = editorEl.selectionStart;
+                const beforeCursor = editorEl.value.substring(0, cursorPos);
+                const afterCursor = editorEl.value.substring(cursorPos);
+                editorEl.value = beforeCursor + '\n' + afterCursor;
+                editorEl.setSelectionRange(cursorPos + 1, cursorPos + 1);
+                this.#utils.get("editor").set("setValueFlag",true);
+                //this.#f2KeyFunction();
+                editorEl.style.opacity = "1"
+                editorEl.focus();
+                return;
+            }else{
+                e.preventDefault();
+                if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor"))){
+                    this.el.get("middleBodySelectCurrentEditor").focus();
+                }
+            }
+            this.#renderGrid();
+            //this.#renderBodySelect(this.#utils.get("select").get("bodySelectArray"))
+        }
+        // else if(e.keyCode === 9){  // tab
+        //     e.preventDefault();
+            
+        //     if(e.shiftKey){
+        //         this.#tabShiftKeyFunction();
+        //         this.#utils.get("select").set("bodySelectInfo",null)
+        //     }else{
+        //         this.#tabKeyFunction();
+        //     }
+            
+        //     this.#renderGrid();
+        // }else if(e.keyCode === 37){// arrow left
+        //     if(editorEl.style.opacity === "0"){
+        //         e.preventDefault();
+        //         if(e.shiftKey && e.ctrlKey){
+        //             this.#arrowLeftShiftCtrlKeyFunction();
+        //         }else if(e.shiftKey){
+        //             this.#arrowLeftShiftKeyFunction();
+        //         }else if(e.ctrlKey){
+        //             this.#arrowLeftCtrlKeyFunction();
+        //         }else{
+        //             let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+        //             this.#utils.get("select").set("leftBodySelectArray",new Array())
+        //             this.#utils.get("select").set("bodySelectArray",[{
+        //                 deleteYn : false,
+        //                 startRowIndex : curInfo.rowIdx,
+        //                 endRowIndex : curInfo.rowIdx,
+        //                 startColIndex : curInfo.colIdx,
+        //                 endColIndex : curInfo.colIdx,
+        //             }])
+        //             this.#tabShiftKeyFunction();
+        //         }
+        //         this.#renderGrid();
+        //     }
+        // }else if(e.keyCode === 38){ // arrow up
+        //     if(editorEl.style.opacity === "0"){
+        //         e.preventDefault();
+        //         if(e.shiftKey && e.ctrlKey){
+        //             this.#arrowUpShiftCtrlKeyFunction();
+        //         }else if(e.shiftKey){
+        //             this.#arrowUpShiftKeyFunction();
+        //         }else if(e.ctrlKey){
+        //             this.#arrowUpCtrlKeyFunction();
+        //         }else{
+        //             this.#utils.get("select").set("leftBodySelectArray",new Array())
+        //             let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+        //             this.#utils.get("select").set("bodySelectArray",[{
+        //                 deleteYn : false,
+        //                 startRowIndex : curInfo.rowIdx,
+        //                 endRowIndex : curInfo.rowIdx,
+        //                 startColIndex : curInfo.colIdx,
+        //                 endColIndex : curInfo.colIdx,
+        //             }])
+        //             this.#enterShiftKeyFunction();
+        //         }
+        //         this.#renderGrid();
+        //     }
+        // }else if(e.keyCode === 39){ // arrow right
+        //     if(editorEl.style.opacity === "0"){
+        //         e.preventDefault();
+        //         if(e.shiftKey && e.ctrlKey){
+        //             this.#arrowRightShiftCtrlKeyFunction();
+        //         }else if(e.shiftKey){
+        //             this.#arrowRightShiftKeyFunction();
+        //         }else if(e.ctrlKey){
+        //             this.#arrowRightCtrlKeyFunction();
+        //         }else{
+        //             let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+        //             this.#utils.get("select").set("leftBodySelectArray",new Array())
+        //             this.#utils.get("select").set("bodySelectArray",[{
+        //                 deleteYn : false,
+        //                 startRowIndex : curInfo.rowIdx,
+        //                 endRowIndex : curInfo.rowIdx,
+        //                 startColIndex : curInfo.colIdx,
+        //                 endColIndex : curInfo.colIdx,
+        //             }])
+        //             this.#tabKeyFunction();
+        //         }
+        //         this.#renderGrid();
+        //     }
+        // }else if(e.keyCode === 40){ // arrow down
+        //     if(editorEl.style.opacity === "0"){
+        //         e.preventDefault();
+        //         if(e.shiftKey && e.ctrlKey){
+        //             this.#arrowDownShiftCtrlKeyFunction();
+        //         }else if(e.shiftKey){
+        //             this.#arrowDownShiftKeyFunction();
+        //         }else if(e.ctrlKey){
+        //             this.#arrowDownCtrlKeyFunction();
+        //         }else{
+        //             let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+        //             this.#utils.get("select").set("leftBodySelectArray",new Array())
+        //             this.#utils.get("select").set("bodySelectArray",[{
+        //                 deleteYn : false,
+        //                 startRowIndex : curInfo.rowIdx,
+        //                 endRowIndex : curInfo.rowIdx,
+        //                 startColIndex : curInfo.colIdx,
+        //                 endColIndex : curInfo.colIdx,
+        //             }])
+        //             this.#enterKeyFunction();
+        //         }
+        //         this.#renderGrid();
+        //     }
+        // }else if(e.keyCode === 113){ // f2
+        //     this.#f2KeyFunction();
+        // }else if(e.keyCode === 46){ // delete
+        //     this.#deleteKeyFunction(rowIdx,colIdx);
+        // }else{
+        //     if(e.isComposing) return;
+        //     let keyType = this.#getKeyType(e.code);
+        //     if(e.ctrlKey){
+        //         if(editorEl.style.opacity === "0"){
+        //             if(e.keyCode === 65){ // ctrl + a
+        //                 e.preventDefault();
+        //                 this.#ctrlAKeyFunction();
+        //             }else if(e.keyCode === 67){ // ctrl + c
+        //                 e.preventDefault();
+        //                 this.#ctrlCKeyFunction("001");
+        //             }else if(e.keyCode === 86){ // ctrl + v
+        //                 e.preventDefault();
+        //                 this.#pasteText(rowIdx,colIdx);
+        //             }else if(e.keyCode === 88){ // ctrl + x
+        //                 e.preventDefault();
+        //                 if(this.#ctrlCKeyFunction("002")!==false) this.#deleteKeyFunction(rowIdx,colIdx);
+        //             }else if(e.keyCode === 89){ // ctrl + y
+        //                 this.#ctrlYKeyFunction(e);
+        //             }else if(e.keyCode === 90){ // ctrl + z
+        //                 this.#ctrlZKeyFunction(e);
+        //             }
+        //         }
+        //     }else{
+        //         if(keyType === "string" || keyType === "number"){
+        //             if(editorEl.style.opacity === "0"){
+        //                 editorEl.value = "";
+        //                 editorEl.style.opacity = "1"
+
+        //                 let top = Number(editorEl.style.top.replace("px",""));
+        //                 let height = Math.max(this.#cell.get("height"),50)
+        //                 const EL_HEIGHT = this.#utils.get("scroll").get("elHeight");
+                        
+        //                 editorEl.style.top = top + Math.min(EL_HEIGHT - (top + height) + this.el.get("middleBody").scrollTop,0) + "px"
+        //                 editorEl.style.height = height + "px"
+
+        //                 let left = Number(editorEl.style.left.replace("px",""));
+        //                 let width = Math.max(Number(editorEl.style.width.replace("px","")),100)
+        //                 const EL_WIDTH = this.#utils.get("scroll").get("elWidth");
+                    
+        //                 editorEl.style.left = left + Math.min(EL_WIDTH - (left + width) + this.el.get("middleBody").scrollLeft,0) + "px";
+        //                 editorEl.style.width = width + "px";  
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     #editorKeyDown = (e,rowId,colNm,editorEl)=> {
@@ -5943,6 +7228,7 @@ class HjsGrid {
                     this.#arrowLeftCtrlKeyFunction();
                 }else{
                     let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+                    this.#utils.get("select").set("leftBodySelectArray",new Array())
                     this.#utils.get("select").set("bodySelectArray",[{
                         deleteYn : false,
                         startRowIndex : curInfo.rowIdx,
@@ -5964,6 +7250,7 @@ class HjsGrid {
                 }else if(e.ctrlKey){
                     this.#arrowUpCtrlKeyFunction();
                 }else{
+                    this.#utils.get("select").set("leftBodySelectArray",new Array())
                     let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
                     this.#utils.get("select").set("bodySelectArray",[{
                         deleteYn : false,
@@ -5987,6 +7274,7 @@ class HjsGrid {
                     this.#arrowRightCtrlKeyFunction();
                 }else{
                     let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+                    this.#utils.get("select").set("leftBodySelectArray",new Array())
                     this.#utils.get("select").set("bodySelectArray",[{
                         deleteYn : false,
                         startRowIndex : curInfo.rowIdx,
@@ -6009,6 +7297,7 @@ class HjsGrid {
                     this.#arrowDownCtrlKeyFunction();
                 }else{
                     let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+                    this.#utils.get("select").set("leftBodySelectArray",new Array())
                     this.#utils.get("select").set("bodySelectArray",[{
                         deleteYn : false,
                         startRowIndex : curInfo.rowIdx,
@@ -6078,7 +7367,9 @@ class HjsGrid {
         
         this.el.get("middleHeader").scrollLeft = this.#utils.get("scroll").get("scrollLeftHeader") + this.el.get("middleBody").scrollLeft
         
-        if(e.keyCode === 16 && this.el.get("middleBodySelectCurrentEditor").style.opacity !== "1"){
+        if(e.keyCode === 16 
+            && this.el.get("middleBodySelectCurrentEditor").style.opacity !== "1"
+            && this.#utils.get("select").get("leftBodySelectYn") !== true){
             this.#calcBodySelect(true);
         }
     }
@@ -7184,9 +8475,33 @@ class HjsGrid {
             }
             
             if(redoTarget.type === "data"){ 
-                if(redoCnt === 0){
+                let colIdx = this.#getColumnNameAndIndex(redoTarget.colNm)[1]
+                if(this.#columns[colIdx].fixed !== true){
+                    this.#utils.get("select").set("leftBodySelectArray",new Array());
                     this.#utils.get("select").set("bodySelectCurrentInfo",redoTarget.curInfo);
                     this.#utils.get("select").set("bodySelectArray",redoTarget.selectArray);
+                }else{
+                    const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+                    const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+                    this.#utils.get("select").set("leftBodySelectArray",[{
+                        deleteYn : false,
+                        startRowIndex : redoTarget.rowIdx,
+                        endRowIndex : redoTarget.rowIdx,
+                        startColIndex : MIN_VISIBLE_COL,
+                        endColIndex : MIN_VISIBLE_COL
+                    }]);
+                    this.#utils.get("select").set("bodySelectCurrentInfo",{
+                        rowIdx : redoTarget.rowIdx,
+                        colIdx : MIN_VISIBLE_COL
+                    });
+                    this.#utils.get("select").set("bodySelectArray",[{
+                        deleteYn : false,
+                        startRowIndex : redoTarget.rowIdx,
+                        endRowIndex : redoTarget.rowIdx,
+                        startColIndex : MIN_VISIBLE_COL,
+                        endColIndex : MAX_VISIBLE_COL
+                    }]);
                 }
 
                 this.#setCellValue(redoTarget.rowIdx,redoTarget.colNm,redoTarget.aValue, false, false, null, false);
@@ -7305,8 +8620,34 @@ class HjsGrid {
             
             if(undoTarget.type === "data"){
                 if(undoCnt === 0){
-                    this.#utils.get("select").set("bodySelectCurrentInfo",undoTarget.curInfo);
-                    this.#utils.get("select").set("bodySelectArray",undoTarget.selectArray);
+                    let colIdx = this.#getColumnNameAndIndex(undoTarget.colNm)[1]
+                    if(this.#columns[colIdx].fixed !== true){
+                        this.#utils.get("select").set("leftBodySelectArray",new Array());
+                        this.#utils.get("select").set("bodySelectCurrentInfo",undoTarget.curInfo);
+                        this.#utils.get("select").set("bodySelectArray",undoTarget.selectArray);
+                    }else{
+                        const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+                        const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+                        this.#utils.get("select").set("leftBodySelectArray",[{
+                            deleteYn : false,
+                            startRowIndex : undoTarget.rowIdx,
+                            endRowIndex : undoTarget.rowIdx,
+                            startColIndex : MIN_VISIBLE_COL,
+                            endColIndex : MIN_VISIBLE_COL
+                        }]);
+                        this.#utils.get("select").set("bodySelectCurrentInfo",{
+                            rowIdx : undoTarget.rowIdx,
+                            colIdx : MIN_VISIBLE_COL
+                        });
+                        this.#utils.get("select").set("bodySelectArray",[{
+                            deleteYn : false,
+                            startRowIndex : undoTarget.rowIdx,
+                            endRowIndex : undoTarget.rowIdx,
+                            startColIndex : MIN_VISIBLE_COL,
+                            endColIndex : MAX_VISIBLE_COL
+                        }]);
+                    }
                 }
 
                 this.#setCellValue(undoTarget.rowIdx,undoTarget.colNm,undoTarget.bValue, false, false);
