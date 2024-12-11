@@ -2844,6 +2844,7 @@ class HjsGrid {
         const END_ROW_INDEX = Math.min(this.#utils.get("scroll").get("passedRowCount") + this.#utils.get("scroll").get("visibleRowCount"),this.#data.get("showData").length)
         const LAST_ROW_FLAG = (END_ROW_INDEX === this.#data.get("showData").length && START_ROW_INDEX === this.#utils.get("scroll").get("scrollRowCount"))
 
+        const EL_HEIGHT = this.#utils.get("scroll").get("elHeight");
         const EL_WIDTH = this.#utils.get("scroll").get("elWidth");
         
         let START_COL_INDEX, END_COL_INDEX, END_WIDTH, TOTAL_INDEX;
@@ -2942,32 +2943,44 @@ class HjsGrid {
                 let curDivEl = this.el.get("middleBodySelectCurrent")
                 curDivEl.classList.add("hjs-grid-selected-current-cell");
                 curDivEl.style.position = "absolute";
-
+                
                 let top = (curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
+                
                 let height = this.#cell.get("height")
-                curDivEl.style.top = top + "px"
-                curDivEl.style.height = height + "px"
-                
-                let realColIdx = (!LAST_COL_FLAG)?this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")):this.#columnsOption.get("visiblePrevColumnIndex").get(this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")));
-                let left = (this.#columnsOption.get("columnBeforeSum")[curInfo.colIdx] - this.#columnsOption.get("columnBeforeSum")[realColIdx])
-                
-                let width = this.#columns[curInfo.colIdx].width
-                curDivEl.style.left = left + "px";
-                curDivEl.style.width = width + "px";
 
-                if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor")) && this.el.get("middleBodySelectCurrentEditor")?.style?.opacity === "0"){
-                    this.el.get("middleBodySelectCurrentEditor").style.top = top + "px"
-                    this.el.get("middleBodySelectCurrentEditor").style.height = height + "px"
-                    this.el.get("middleBodySelectCurrentEditor").style.left = left + "px"
-                    this.el.get("middleBodySelectCurrentEditor").style.width = width + "px"
-                }
-                let showOrgRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(curInfo.rowIdx))
-                let curValue = this.getCellValue(showOrgRowIdx,curInfo.colIdx)
-                
-                if(curInfo.rowIdx !== curElInfo?.rowIdx || curInfo.colIdx !== curElInfo?.colIdx){
-                    this.#createEditor(curInfo.rowIdx,curInfo.colIdx); 
-                }else if(curInfo.rowIdx === curElInfo?.rowIdx && curInfo.colIdx === curElInfo?.colIdx && curValue.toString() !== this.el.get("middleBodySelectCurrentEditor")?.value?.toString()){
-                    this.el.get("middleBodySelectCurrentEditor").value = curValue;
+                if(top+height<=EL_HEIGHT){
+                    curDivEl.style.top = top + "px"
+                    curDivEl.style.height = height + "px"
+                    
+                    let realColIdx = (!LAST_COL_FLAG)?this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")):this.#columnsOption.get("visiblePrevColumnIndex").get(this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")));
+                    let left = (this.#columnsOption.get("columnBeforeSum")[curInfo.colIdx] - this.#columnsOption.get("columnBeforeSum")[realColIdx])
+                    
+                    let width = this.#columns[curInfo.colIdx].width
+
+                    if(left+width <= EL_WIDTH){
+                        curDivEl.style.left = left + "px";
+                        curDivEl.style.width = width + "px";
+                        curDivEl.style.opacity = "1";
+
+                        if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor")) && this.el.get("middleBodySelectCurrentEditor")?.style?.opacity === "0"){
+                            this.el.get("middleBodySelectCurrentEditor").style.top = top + "px"
+                            this.el.get("middleBodySelectCurrentEditor").style.height = height + "px"
+                            this.el.get("middleBodySelectCurrentEditor").style.left = left + "px"
+                            this.el.get("middleBodySelectCurrentEditor").style.width = width + "px"
+                        }
+                        let showOrgRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(curInfo.rowIdx))
+                        let curValue = this.getCellValue(showOrgRowIdx,curInfo.colIdx)
+                        
+                        if(curInfo.rowIdx !== curElInfo?.rowIdx || curInfo.colIdx !== curElInfo?.colIdx){
+                            this.#createEditor(curInfo.rowIdx,curInfo.colIdx); 
+                        }else if(curInfo.rowIdx === curElInfo?.rowIdx && curInfo.colIdx === curElInfo?.colIdx && curValue.toString() !== this.el.get("middleBodySelectCurrentEditor")?.value?.toString()){
+                            this.el.get("middleBodySelectCurrentEditor").value = curValue;
+                        }
+                    }else{
+                        curDivEl.style.opacity = "0";
+                    }
+                }else{
+                    curDivEl.style.opacity = "0";
                 }
             }
         }else{
