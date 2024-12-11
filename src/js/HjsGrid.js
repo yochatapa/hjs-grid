@@ -2844,6 +2844,7 @@ class HjsGrid {
         const END_ROW_INDEX = Math.min(this.#utils.get("scroll").get("passedRowCount") + this.#utils.get("scroll").get("visibleRowCount"),this.#data.get("showData").length)
         const LAST_ROW_FLAG = (END_ROW_INDEX === this.#data.get("showData").length && START_ROW_INDEX === this.#utils.get("scroll").get("scrollRowCount"))
 
+        const EL_HEIGHT = this.#utils.get("scroll").get("elHeight");
         const EL_WIDTH = this.#utils.get("scroll").get("elWidth");
         
         let START_COL_INDEX, END_COL_INDEX, END_WIDTH, TOTAL_INDEX;
@@ -2942,32 +2943,44 @@ class HjsGrid {
                 let curDivEl = this.el.get("middleBodySelectCurrent")
                 curDivEl.classList.add("hjs-grid-selected-current-cell");
                 curDivEl.style.position = "absolute";
-
+                
                 let top = (curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
+                
                 let height = this.#cell.get("height")
-                curDivEl.style.top = top + "px"
-                curDivEl.style.height = height + "px"
-                
-                let realColIdx = (!LAST_COL_FLAG)?this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")):this.#columnsOption.get("visiblePrevColumnIndex").get(this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")));
-                let left = (this.#columnsOption.get("columnBeforeSum")[curInfo.colIdx] - this.#columnsOption.get("columnBeforeSum")[realColIdx])
-                
-                let width = this.#columns[curInfo.colIdx].width
-                curDivEl.style.left = left + "px";
-                curDivEl.style.width = width + "px";
 
-                if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor")) && this.el.get("middleBodySelectCurrentEditor")?.style?.opacity === "0"){
-                    this.el.get("middleBodySelectCurrentEditor").style.top = top + "px"
-                    this.el.get("middleBodySelectCurrentEditor").style.height = height + "px"
-                    this.el.get("middleBodySelectCurrentEditor").style.left = left + "px"
-                    this.el.get("middleBodySelectCurrentEditor").style.width = width + "px"
-                }
-                let showOrgRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(curInfo.rowIdx))
-                let curValue = this.getCellValue(showOrgRowIdx,curInfo.colIdx)
-                
-                if(curInfo.rowIdx !== curElInfo?.rowIdx || curInfo.colIdx !== curElInfo?.colIdx){
-                    this.#createEditor(curInfo.rowIdx,curInfo.colIdx); 
-                }else if(curInfo.rowIdx === curElInfo?.rowIdx && curInfo.colIdx === curElInfo?.colIdx && curValue.toString() !== this.el.get("middleBodySelectCurrentEditor")?.value?.toString()){
-                    this.el.get("middleBodySelectCurrentEditor").value = curValue;
+                if(top+height<=EL_HEIGHT){
+                    curDivEl.style.top = top + "px"
+                    curDivEl.style.height = height + "px"
+                    
+                    let realColIdx = (!LAST_COL_FLAG)?this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")):this.#columnsOption.get("visiblePrevColumnIndex").get(this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")));
+                    let left = (this.#columnsOption.get("columnBeforeSum")[curInfo.colIdx] - this.#columnsOption.get("columnBeforeSum")[realColIdx])
+                    
+                    let width = this.#columns[curInfo.colIdx].width
+
+                    if(left+width <= EL_WIDTH){
+                        curDivEl.style.left = left + "px";
+                        curDivEl.style.width = width + "px";
+                        curDivEl.style.opacity = "1";
+
+                        if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor")) && this.el.get("middleBodySelectCurrentEditor")?.style?.opacity === "0"){
+                            this.el.get("middleBodySelectCurrentEditor").style.top = top + "px"
+                            this.el.get("middleBodySelectCurrentEditor").style.height = height + "px"
+                            this.el.get("middleBodySelectCurrentEditor").style.left = left + "px"
+                            this.el.get("middleBodySelectCurrentEditor").style.width = width + "px"
+                        }
+                        let showOrgRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(curInfo.rowIdx))
+                        let curValue = this.getCellValue(showOrgRowIdx,curInfo.colIdx)
+                        
+                        if(curInfo.rowIdx !== curElInfo?.rowIdx || curInfo.colIdx !== curElInfo?.colIdx){
+                            this.#createEditor(curInfo.rowIdx,curInfo.colIdx); 
+                        }else if(curInfo.rowIdx === curElInfo?.rowIdx && curInfo.colIdx === curElInfo?.colIdx && curValue.toString() !== this.el.get("middleBodySelectCurrentEditor")?.value?.toString()){
+                            this.el.get("middleBodySelectCurrentEditor").value = curValue;
+                        }
+                    }else{
+                        curDivEl.style.opacity = "0";
+                    }
+                }else{
+                    curDivEl.style.opacity = "0";
                 }
             }
         }else{
@@ -4241,7 +4254,7 @@ class HjsGrid {
             }
 
             if(colIdx<0){
-                if(orderArray[(colIdx*-1)-1] === "checkbox"){
+                if(orderArray[(colIdx*-1)-1] === "checkbox" && checkboxFlag){
                     // left checkbox
                     let clickX = bodyEl.getBoundingClientRect().x+clientX;
                     let clickY = bodyEl.getBoundingClientRect().y+clientY;
@@ -7175,7 +7188,7 @@ class HjsGrid {
     #editorKeyDown = (e,rowId,colNm,editorEl)=> {
         if(e.ctrlKey && e.keyCode === 17) return;
         if(e.shiftKey && e.keyCode === 16) return;
-
+        
         let rowIdx = this.#getShowOrgDataIndexById(rowId)
         let colIdx = this.#getColumnNameAndIndex(colNm)?.[1];
 
@@ -7221,6 +7234,11 @@ class HjsGrid {
             }
             
             this.#renderGrid();
+        }else if(e.keyCode === 27){  // esc
+            e.preventDefault();
+            
+            editorEl.value = this.getCellValue(rowIdx,colNm)
+            editorEl.style.opacity = "0"
         }else if(e.keyCode === 37){// arrow left
             if(editorEl.style.opacity === "0"){
                 e.preventDefault();
@@ -8234,6 +8252,8 @@ class HjsGrid {
         let beforeArr = {};
         let afterArr = {};
 
+        let lsa = this.#utils.get("select").get("leftBodySelectArray")
+
         for(let idx=0;idx<sa.length;idx++){
             for(let rowIdx=sa[idx].startRowIndex;rowIdx<=sa[idx].endRowIndex;rowIdx++){
                 for(let colIdx=sa[idx].startColIndex;colIdx<=sa[idx].endColIndex;colIdx++){
@@ -8253,6 +8273,28 @@ class HjsGrid {
             }
         }
 
+        if(lsa.length>0){
+            for(let idx=0;idx<lsa.length;idx++){
+                let fixedCols = this.#columnsOption.get("fixedColumnRealIndex");
+                for(let rowIdx=lsa[idx].startRowIndex;rowIdx<=lsa[idx].endRowIndex;rowIdx++){
+                    for(let colKey of fixedCols.keys().toArray()){
+                        let showOrgRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx));
+                        let colIdx = fixedCols.get(colKey);
+
+                        let bValue = this.getCellValue(showOrgRowIdx,colIdx);
+                        let colName = this.getColumnNameByIndex(colIdx)
+                        if(this.#isUN(beforeArr[showOrgRowIdx])) beforeArr[showOrgRowIdx] = {};
+                        beforeArr[showOrgRowIdx][colName] = bValue;
+
+                        if(this.#isUN(afterArr[showOrgRowIdx])) afterArr[showOrgRowIdx] = {};
+                        afterArr[showOrgRowIdx][colName] = "";
+
+                        this.#setCellValue(showOrgRowIdx,colIdx,"",false,false);
+                    }
+                }
+            }
+        }
+
         let undoNumber = this.#utils.get("undoNumber")+1;
         this.#utils.set("undoNumber",undoNumber)
 
@@ -8262,6 +8304,7 @@ class HjsGrid {
             "aValue"        : afterArr,
             "undoNumber"    : undoNumber,
             "selectArray"   : sa,
+            "leftSelectArray": lsa,
             "curInfo"       : {
                 rowIdx : curRowIdx,
                 colIdx : curColIdx
@@ -8300,6 +8343,7 @@ class HjsGrid {
     #ctrlCKeyFunction = msg => {
         let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
         let sa = this.#utils.get("select").get("bodySelectArray")
+        let lsa = this.#utils.get("select").get("leftBodySelectArray")
         
         if(sa.length===1){
             let copyStr = "";
@@ -8309,6 +8353,21 @@ class HjsGrid {
                 if(copyStr!=="") copyStr += "\n"
                 let rowStr="";
                 let rowCnt = 0;
+                
+                if(lsa.length > 0){
+                    let fixedCols = this.#columnsOption.get("fixedColumnRealIndex");
+                    for(let colKey of fixedCols.keys().toArray()){
+                        let showOrgRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx));
+                        let colIdx = fixedCols.get(colKey);
+                        
+                        let cellValue = this.getCellValue(showOrgRowIdx,colIdx)??"";
+                        
+                        if(rowCnt!==0) rowStr += "\t"
+                        rowCnt++;
+                        rowStr += cellValue;
+                    }
+                }
+
                 for(let colIdx=minCol;colIdx<=maxCol;colIdx++){
                     if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
                     let cellValue;
@@ -8660,6 +8719,9 @@ class HjsGrid {
 
                 undoCnt++;
             }else if(undoTarget.type === "dataMulti"){
+                if(!this.#isUN(undoTarget.leftSelectArray)){
+                    this.#utils.get("select").set("leftBodySelectArray",undoTarget.leftSelectArray);
+                }
                 if(undoCnt === 0 && this.#utils.get("sortInfo").get("sortOrder").length === 0 && this.#utils.get("filterInfo").get("filterOrder").length === 0){
                     this.#utils.get("select").set("bodySelectCurrentInfo",undoTarget.curInfo);
                     this.#utils.get("select").set("bodySelectArray",undoTarget.selectArray);
