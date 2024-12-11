@@ -8330,6 +8330,7 @@ class HjsGrid {
     #ctrlCKeyFunction = msg => {
         let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
         let sa = this.#utils.get("select").get("bodySelectArray")
+        let lsa = this.#utils.get("select").get("leftBodySelectArray")
         
         if(sa.length===1){
             let copyStr = "";
@@ -8339,6 +8340,21 @@ class HjsGrid {
                 if(copyStr!=="") copyStr += "\n"
                 let rowStr="";
                 let rowCnt = 0;
+                
+                if(lsa.length > 0){
+                    let fixedCols = this.#columnsOption.get("fixedColumnRealIndex");
+                    for(let colKey of fixedCols.keys().toArray()){
+                        let showOrgRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx));
+                        let colIdx = fixedCols.get(colKey);
+                        
+                        let cellValue = this.getCellValue(showOrgRowIdx,colIdx)??"";
+                        
+                        if(rowCnt!==0) rowStr += "\t"
+                        rowCnt++;
+                        rowStr += cellValue;
+                    }
+                }
+
                 for(let colIdx=minCol;colIdx<=maxCol;colIdx++){
                     if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
                     let cellValue;
