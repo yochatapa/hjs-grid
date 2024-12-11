@@ -4241,7 +4241,7 @@ class HjsGrid {
             }
 
             if(colIdx<0){
-                if(orderArray[(colIdx*-1)-1] === "checkbox"){
+                if(orderArray[(colIdx*-1)-1] === "checkbox" && checkboxFlag){
                     // left checkbox
                     let clickX = bodyEl.getBoundingClientRect().x+clientX;
                     let clickY = bodyEl.getBoundingClientRect().y+clientY;
