@@ -8239,6 +8239,8 @@ class HjsGrid {
         let beforeArr = {};
         let afterArr = {};
 
+        let lsa = this.#utils.get("select").get("leftBodySelectArray")
+
         for(let idx=0;idx<sa.length;idx++){
             for(let rowIdx=sa[idx].startRowIndex;rowIdx<=sa[idx].endRowIndex;rowIdx++){
                 for(let colIdx=sa[idx].startColIndex;colIdx<=sa[idx].endColIndex;colIdx++){
@@ -8258,6 +8260,28 @@ class HjsGrid {
             }
         }
 
+        if(lsa.length>0){
+            for(let idx=0;idx<lsa.length;idx++){
+                let fixedCols = this.#columnsOption.get("fixedColumnRealIndex");
+                for(let rowIdx=lsa[idx].startRowIndex;rowIdx<=lsa[idx].endRowIndex;rowIdx++){
+                    for(let colKey of fixedCols.keys().toArray()){
+                        let showOrgRowIdx = this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx));
+                        let colIdx = fixedCols.get(colKey);
+
+                        let bValue = this.getCellValue(showOrgRowIdx,colIdx);
+                        let colName = this.getColumnNameByIndex(colIdx)
+                        if(this.#isUN(beforeArr[showOrgRowIdx])) beforeArr[showOrgRowIdx] = {};
+                        beforeArr[showOrgRowIdx][colName] = bValue;
+
+                        if(this.#isUN(afterArr[showOrgRowIdx])) afterArr[showOrgRowIdx] = {};
+                        afterArr[showOrgRowIdx][colName] = "";
+
+                        this.#setCellValue(showOrgRowIdx,colIdx,"",false,false);
+                    }
+                }
+            }
+        }
+
         let undoNumber = this.#utils.get("undoNumber")+1;
         this.#utils.set("undoNumber",undoNumber)
 
@@ -8267,6 +8291,7 @@ class HjsGrid {
             "aValue"        : afterArr,
             "undoNumber"    : undoNumber,
             "selectArray"   : sa,
+            "leftSelectArray": lsa,
             "curInfo"       : {
                 rowIdx : curRowIdx,
                 colIdx : curColIdx
@@ -8665,6 +8690,9 @@ class HjsGrid {
 
                 undoCnt++;
             }else if(undoTarget.type === "dataMulti"){
+                if(!this.#isUN(undoTarget.leftSelectArray)){
+                    this.#utils.get("select").set("leftBodySelectArray",undoTarget.leftSelectArray);
+                }
                 if(undoCnt === 0 && this.#utils.get("sortInfo").get("sortOrder").length === 0 && this.#utils.get("filterInfo").get("filterOrder").length === 0){
                     this.#utils.get("select").set("bodySelectCurrentInfo",undoTarget.curInfo);
                     this.#utils.get("select").set("bodySelectArray",undoTarget.selectArray);
