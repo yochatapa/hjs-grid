@@ -1992,7 +1992,7 @@ class HjsGrid {
 
         let colName = this.getColumnNameByIndex(colIdx)
         
-        nameLabel.innerText = this.#getFormularValue(rowIdx,colName)
+        nameLabel.innerText = this.#getFormulaValue(rowIdx,colName)
 
         divEl.style.maxHeight = HEIGHT-4 + "px";
 
@@ -3027,7 +3027,6 @@ class HjsGrid {
 
         editorEl.classList.add("hjs-grid-editor")
 
-        editorEl.setAttribute("inputmode","none");
         editorEl.style.opacity = "0"
         
         let rowId = this.#getIdByShowOrgDataIndex(showOrgRow)
@@ -3039,6 +3038,8 @@ class HjsGrid {
             this.#setNativeEvent(editorEl,"focusout",this.#editorFocusOut,[rowId,colNm,editorEl])
             this.#setNativeEvent(editorEl,"keydown",this.#editorKeyDown,[rowId,colNm,editorEl])
             this.#setNativeEvent(editorEl,"keyup",this.#editorKeyUp,[rowId,colNm,editorEl])
+
+            editorEl.setAttribute("inputmode","none");
             
             let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
             //let height = Math.max(this.#cell.get("height"),50)
@@ -3385,7 +3386,7 @@ class HjsGrid {
         return;
     }
 
-    #getFormularValue = (rowIdx, colName) => {
+    #getFormulaValue = (rowIdx, colName) => {
         let rowId = this.#getIdByShowDataIndex(rowIdx)
         let showOrgRowIdx = this.#getShowOrgDataIndexById(rowId);
 
@@ -3405,23 +3406,23 @@ class HjsGrid {
 
         if(!this.#isUN(this.#columns[colIdx].formula)){
             if(typeof this.#columns[colIdx].formula === "function") return this.#columns[colIdx].formula(value);
-            else if(typeof this.#columns[colIdx].formula === "string" && this.#columns[colIdx].formula?.[0] === "=") return this.#execFormula(this.#columns[colIdx].formula, rowId, colName)
+            else if(typeof this.#columns[colIdx].formula === "string" && this.#columns[colIdx].formula?.[0] === "=") return this.#execFormula(this.#columns[colIdx].formula, rowId, colName, value)
         }
 
         return value
     }
 
-    #execFormula = (formula, rowId, colName) => {
+    #execFormula = (formula, rowId, colName, value) => {
         if(formula.toString().substring(0,1)!=="=") return formula;
         try {
-            return new Function('grid',"return "+this.#getFormularString(formula, rowId, colName))(this);
+            return new Function('grid',"return "+this.#getFormulaString(formula, rowId, colName, value))(this);
         } catch (e) {
             console.error(e)
             return "#ERROR"
         }
     }
 
-    #getFormularString = (formula, rowId, colName) => {
+    #getFormulaString = (formula, rowId, colName, value) => {
         let strFlag = false;
         let fArray = new Array();
         let fStr = "";
@@ -3471,15 +3472,21 @@ class HjsGrid {
             }
 
             if(cFlag){
-                if(!fTarget.strFlag) fString += "grid.ROWVALUE(" + rowId + ",`" + colName + "`,`";
+                if(!fTarget.strFlag){
+                    if(this.#isUN(value) && colName !== fTarget.string) fString += "grid.ROWVALUE(" + rowId + ",`" + colName + "`,`";
+                    else fString += `"${value}"`
+                }
             }
 
             if(functionList.includes(fTarget.string.trim().toUpperCase())){
                 fString += fTarget.string.toString().toUpperCase();
-            }else fString += fTarget.string;
+            }else if(!(cFlag && !fTarget.strFlag && (!this.#isUN(value) || colName === fTarget.string)))
+                fString += fTarget.string;
 
             if(cFlag){
-                if(!fTarget.strFlag) fString += "`)"
+                if(!fTarget.strFlag){
+                    if(this.#isUN(value) && colName !== fTarget.string) fString += "`)"
+                }
             }
             
             if(fTarget.extraString !== undefined && fTarget.extraString !== null){
