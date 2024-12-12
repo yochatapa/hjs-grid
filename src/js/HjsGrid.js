@@ -3027,7 +3027,6 @@ class HjsGrid {
 
         editorEl.classList.add("hjs-grid-editor")
 
-        editorEl.setAttribute("inputmode","none");
         editorEl.style.opacity = "0"
         
         let rowId = this.#getIdByShowOrgDataIndex(showOrgRow)
@@ -3039,6 +3038,8 @@ class HjsGrid {
             this.#setNativeEvent(editorEl,"focusout",this.#editorFocusOut,[rowId,colNm,editorEl])
             this.#setNativeEvent(editorEl,"keydown",this.#editorKeyDown,[rowId,colNm,editorEl])
             this.#setNativeEvent(editorEl,"keyup",this.#editorKeyUp,[rowId,colNm,editorEl])
+
+            editorEl.setAttribute("inputmode","none");
             
             let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
             //let height = Math.max(this.#cell.get("height"),50)
