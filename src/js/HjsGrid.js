@@ -961,7 +961,7 @@ class HjsGrid {
                     
                     this.#setNativeEvent(labelEl,"mousedown",this.#sortEvent,[realColIdx])
                     this.#setNativeEvent(sortDiv,"mousedown",this.#sortEvent,[realColIdx])
-                    this.#setNativeEvent(sortDiv,"touchstart",this.#sortEvent,[realColIdx])
+                    this.#setNativeEvent(sortDiv,"touchend",this.#sortEvent,[realColIdx])
                 }
 
                 if(!this.#isUN(colInfo.filter) &&(colInfo.filter === true || typeof colInfo.filter === "object")){
@@ -975,7 +975,7 @@ class HjsGrid {
                     filterDiv.classList.add("hjs-grid-pointer");
 
                     this.#setNativeEvent(filterDiv,"mousedown",this.#filterEvent,[realColIdx])
-                    this.#setNativeEvent(filterDiv,"touchstart",this.#filterEvent,[realColIdx])
+                    this.#setNativeEvent(filterDiv,"touchend",this.#filterEvent,[realColIdx])
                 }
 
                 divEl.append(sortFilter)
@@ -4392,11 +4392,13 @@ class HjsGrid {
             }else if(this.#utils.get("current").get("leftFirstClick") === true && !RIGHT_FLAG){
                 doubleClickYn = true
             }
-            console.log(e.target)
+            
             this.#utils.get("select").set("target",e.target);
             let bodyEl = this.el.get("leftBody");
             let clientX = Math.round((e.type==="touchstart"?e.touches[0].clientX:e.clientX)-bodyEl.getBoundingClientRect().x+1);
             let clientY = Math.round((e.type==="touchstart"?e.touches[0].clientY:e.clientY)-bodyEl.getBoundingClientRect().y);
+            let radiusX = e.type==="touchstart"?e.touches[0].radiusX:0
+            let radiusY = e.type==="touchstart"?e.touches[0].radiusY:0
     
             let rowIdx = ((this.el.get("leftBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1) + Math.floor((clientY+this.el.get("leftBody").scrollTop)/this.#cell.get("height"));
             rowIdx=Math.min(rowIdx,this.#data.get("showData").length-1)
@@ -4458,8 +4460,8 @@ class HjsGrid {
                     let checkY = checkInfo.top;
                     let checkWidth = checkInfo.width;
                     let checkHeight = checkInfo.height;
-
-                    if(checkX<=clickX && clickX <= checkX+checkWidth && checkY <= clickY && clickY <= checkY + checkHeight){
+                    console.log(e.touches[0])
+                    if(checkX-radiusX<=clickX && clickX <= checkX+radiusX+checkWidth && checkY-radiusY <= clickY && clickY <= checkY + + radiusY + checkHeight){
                         let checked = this.el.get("checkbox").get(rowIdx).checked;
                         this.el.get("checkbox").get(rowIdx).checked = !checked
                         if(checked) this.#utils.get("checkedRow").delete(this.#getIdByShowDataIndex(rowIdx));
