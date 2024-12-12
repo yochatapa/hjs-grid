@@ -1992,7 +1992,7 @@ class HjsGrid {
 
         let colName = this.getColumnNameByIndex(colIdx)
         
-        nameLabel.innerText = this.#getFormularValue(rowIdx,colName)
+        nameLabel.innerText = this.#getFormulaValue(rowIdx,colName)
 
         divEl.style.maxHeight = HEIGHT-4 + "px";
 
@@ -3385,7 +3385,7 @@ class HjsGrid {
         return;
     }
 
-    #getFormularValue = (rowIdx, colName) => {
+    #getFormulaValue = (rowIdx, colName) => {
         let rowId = this.#getIdByShowDataIndex(rowIdx)
         let showOrgRowIdx = this.#getShowOrgDataIndexById(rowId);
 
@@ -3414,14 +3414,14 @@ class HjsGrid {
     #execFormula = (formula, rowId, colName) => {
         if(formula.toString().substring(0,1)!=="=") return formula;
         try {
-            return new Function('grid',"return "+this.#getFormularString(formula, rowId, colName))(this);
+            return new Function('grid',"return "+this.#getFormulaString(formula, rowId, colName))(this);
         } catch (e) {
             console.error(e)
             return "#ERROR"
         }
     }
 
-    #getFormularString = (formula, rowId, colName) => {
+    #getFormulaString = (formula, rowId, colName) => {
         let strFlag = false;
         let fArray = new Array();
         let fStr = "";
