@@ -570,8 +570,16 @@ class HjsGrid {
 
         this.el.get("leftBody").append(selectCurrentEl);
 
+        let selectTouchEl = document.createElement("div");
+
+        selectTouchEl.style.position = "absolute"
+
+        this.el.set("leftBodySelectTouchEl",selectTouchEl);
+
+        this.el.get("leftBody").append(selectTouchEl);
+
         this.#setNativeEvent(document.documentElement,"mouseup",this.#gridLeftCellMouseUp,null,{passive:false})
-        this.#setNativeEvent(document.documentElement,"mouseup",this.#gridLeftCellMouseUp,null,{passive:false})
+        this.#setNativeEvent(document.documentElement,"touchend",this.#gridLeftCellMouseUp,null,{passive:false})
 
         /**
          * left body contextmenu
@@ -595,14 +603,12 @@ class HjsGrid {
 
         this.el.get("leftBody").append(bodyTableEl);
 
-        this.#setNativeEvent(this.el.get("leftBody"),"touchstart",this.#gridElementTouchStart,null,{passive:false})
-
         let bodyTableTbodyEl = document.createElement("tbody");
         bodyTableTbodyEl.classList.add("hjs-grid-left-body-table-tbody");
 
         this.el.set("leftBodyTableTbody",bodyTableTbodyEl);
 
-        this.#setNativeEvent(this.el.get("leftBody"),"touchstart",this.#gridElementTouchStart,null,{passive:false})
+        this.#setNativeEvent(this.el.get("leftBody"),"touchstart",this.#gridElementTouchStart,["left"],{passive:false})
 
         this.el.get("leftBodyTable").append(bodyTableTbodyEl);
     }
@@ -679,7 +685,7 @@ class HjsGrid {
         
         let selectEl = document.createElement("div");
         selectEl.classList.add("hjs-grid-middle-body-select");
-
+ 
         this.el.set("middleBodySelect",selectEl);
         
         this.el.get("middleBody").append(selectEl);
@@ -691,7 +697,7 @@ class HjsGrid {
         this.el.get("middleBody").append(selectCurrentEl);
 
         this.#setNativeEvent(document.documentElement,"mouseup",this.#gridCellMouseUp,null,{passive:false})
-        this.#setNativeEvent(document.documentElement,"mouseup",this.#gridCellMouseUp,null,{passive:false})
+        this.#setNativeEvent(document.documentElement,"touchend",this.#gridCellMouseUp,null,{passive:false})
 
         /**
          * middle body contextmenu
@@ -2834,6 +2840,16 @@ class HjsGrid {
                 visibleArray[0].divEl.classList.add("hjs-grid-selected-cell-border")
             }                    
         }
+
+        let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
+        if(!this.#isUN(curInfo)){
+            let curTop = (curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
+
+            this.el.get("leftBodySelectTouchEl").style.top = curTop + "px"
+            this.el.get("leftBodySelectTouchEl").style.height = this.#cell.get("height") + "px"
+            this.el.get("leftBodySelectTouchEl").style.width = "100%"
+        }
+        
     }
 
     #renderBodySelect = (newSelectArray) => {
@@ -3113,7 +3129,7 @@ class HjsGrid {
 
             editorEl.style.opacity = "1"
     
-            this.el.get("leftBodySelectCurrent").insertAdjacentElement("afterend",editorEl)
+            this.el.get("leftBodySelectTouchEl").insertAdjacentElement("afterend",editorEl)
 
             setTimeout(()=>{
                 editorEl.focus();
@@ -4358,7 +4374,7 @@ class HjsGrid {
         const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
         
         if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
-            e.preventDefault();
+            e.preventDefault(); 
             this.#utils.get("select").set("leftBodySelectYn",true);
             this.el.get("leftBody").scrollLeft = this.#utils.get("scroll").get("scrollLeft")
 
@@ -4368,7 +4384,7 @@ class HjsGrid {
                 this.#utils.get("current").set("leftFirstClick",true)
                 this.#utils.get("current").set("leftFirstClickTarget",e.target)
                 if(!this.#isUN(this.el.get("leftBodySelectCurrentEditor"))){
-                    this.el.get("leftBodySelectCurrentEditor").remove();
+                    this.el.get("leftBodySelectCurrentEditor").style.opacity = "0";
                 }
                 setTimeout(()=>{
                     this.#utils.get("current").set("leftFirstClick",false);
@@ -4376,7 +4392,7 @@ class HjsGrid {
             }else if(this.#utils.get("current").get("leftFirstClick") === true && !RIGHT_FLAG){
                 doubleClickYn = true
             }
-    
+            console.log(e.target)
             this.#utils.get("select").set("target",e.target);
             let bodyEl = this.el.get("leftBody");
             let clientX = Math.round((e.type==="touchstart"?e.touches[0].clientX:e.clientX)-bodyEl.getBoundingClientRect().x+1);
@@ -4482,15 +4498,25 @@ class HjsGrid {
                     }else this.#utils.get("select").set("leftBodySelectArray",new Array());
                 }else{
                     if(e.type==="touchstart"){
+                        let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
+                        
+                        let selectArray = this.#utils.get("select").get("leftBodySelectArray");
+                        let sa = false;
+
+                        for(let idx=0;idx<selectArray.length;idx++){
+                            if(selectArray[idx].startRowIndex<=rowIdx && rowIdx<=selectArray[idx].endRowIndex) sa = true;
+                            break;
+                        }
+
                         this.#utils.get("select").set("leftBodySelectArray",[{
                             deleteYn : deleteYn,
                             startRowIndex : rowIdx,
                             endRowIndex : rowIdx,
-                            startColIndex : colIdx,
-                            endColIndex : colIdx
+                            startColIndex : MIN_VISIBLE_COL,
+                            endColIndex : MAX_VISIBLE_COL
                         }]);
                         
-                        if(!e.target.classList.contains("hjs-grid-editor")) this.#utils.get("select").set("leftBodySelectFlag",false)
+                        if(!sa) this.#utils.get("select").set("leftBodySelectFlag",false)
                         else this.#utils.get("select").set("leftBodySelectArray",new Array());
                     }
                 }
@@ -5029,7 +5055,7 @@ class HjsGrid {
         const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
         let shiftFlag = e.shiftKey;
         let ctrlFlag = e.ctrlKey;
-
+        if(!this.#isUN(this.el.get("leftBodySelectCurrentEditor"))) this.el.get("leftBodySelectCurrentEditor").style.opacity = "0";
         if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
             e.preventDefault();
             this.el.get("middleBody").scrollLeft = this.#utils.get("scroll").get("scrollLeft")
@@ -5655,6 +5681,7 @@ class HjsGrid {
     #gridLeftCellMouseMove = (e) => {
         const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
         if(RIGHT_FLAG) return;
+        
         if(this.#utils.get("select").get("leftBodySelectFlag") === true){
             if(e.type === "touchmove"){
                 e.preventDefault();
@@ -5779,11 +5806,12 @@ class HjsGrid {
         }
     }
 
-    #gridElementTouchStart = e => {
+    #gridElementTouchStart = (e, parent) => {
         if(e.target.type === "checkbox") return;
-        if(this.#utils.get("select").get("leftBodySelectArray").length>0 
+        if((parent === "left" && e.target.style.opacity !== "0")
             || !(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
-            e.preventDefault();
+            if(parent !== "left") e.preventDefault();
+            this.#utils.get("scroll").get("touchInfo").set("parent",parent)
             this.#utils.get("scroll").get("touchInfo").set("touchScrollFlag",true)
             this.#utils.get("scroll").get("touchInfo").set("pageX",e.touches[0].pageX)
             this.#utils.get("scroll").get("touchInfo").set("pageY",e.touches[0].pageY)
@@ -5797,7 +5825,8 @@ class HjsGrid {
     
     #gridElementTouchMove = e => {    
         if(this.#utils.get("scroll").get("touchInfo").get("touchScrollFlag") === true){ 
-            e.preventDefault();
+            if(this.#utils.get("scroll").get("touchInfo").get("parent") !== "left") e.preventDefault();
+            if(this.#utils.get("scroll").get("touchInfo").get("parent") === "left" && this.el.get("leftBodySelectCurrentEditor")?.style?.opacity === "1") this.el.get("leftBodySelectCurrentEditor").style.opacity = "0";
             const touchY = e.touches[0].pageY;
             const deltaY = this.#utils.get("scroll").get("touchInfo").get("pageY") - touchY;
 
@@ -5866,8 +5895,10 @@ class HjsGrid {
         }
         
         if(this.#utils.get("scroll").get("touchInfo").get("touchScrollFlag") === true){
-            e.preventDefault();
-            e.stopPropagation();
+            if(this.#utils.get("scroll").get("touchInfo").get("parent") !== "left"){
+                e.preventDefault();
+                e.stopPropagation();
+            }
             let deltaT = e.timeStamp - this.#utils.get("scroll").get("touchInfo").get("startDate");
             const TIME_MIN_LIMIT = 30
             const TIME_MAX_LIMIT = 300
@@ -7181,8 +7212,6 @@ class HjsGrid {
         this.el.get("middleBodyContextMenu").style.opacity = "0"
         
         if(e.keyCode === 13){   // enter
-            
-            console.log(editorEl)
             if(e.altKey){
                 let tempInput = document.createElement("input")
                 this.#utils.get("editor").set("setValueFlag",false);
