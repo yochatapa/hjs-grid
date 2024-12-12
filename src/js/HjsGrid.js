@@ -1991,7 +1991,8 @@ class HjsGrid {
         tdEl.style.maxHeight = HEIGHT + "px";
 
         let colName = this.getColumnNameByIndex(colIdx)
-        nameLabel.innerText = this.#getShowFormatData(colName,(this.#data.get("showData")?.[rowIdx]?.[colName]??""))
+        
+        nameLabel.innerText = this.#getFormularValue(rowIdx,colName)
 
         divEl.style.maxHeight = HEIGHT-4 + "px";
 
@@ -3384,7 +3385,10 @@ class HjsGrid {
         return;
     }
 
-    #getShowFormatData = (colName, value) => { 
+    #getFormularValue = (rowIdx, colName) => {
+        let rowId = this.#getIdByShowDataIndex(rowIdx)
+        let showOrgRowIdx = this.#getShowOrgDataIndexById(rowId);
+
         let colIdx;
         if(typeof colName === "number"){
             colIdx = colName
@@ -3392,8 +3396,175 @@ class HjsGrid {
         }else{
             colIdx = this.getColumnIndexByName(colName)
         }
-        if(!this.#isUN(this.#columns[colIdx].showFormat)) return this.#columns[colIdx].showFormat(value);
-        else return value
+
+        let value = this.getCellValue(showOrgRowIdx,colIdx);
+
+        if(typeof value === "string" && value?.[0] === "="){
+            value = this.#execFormula(value, rowId, colName);
+        }
+
+        if(!this.#isUN(this.#columns[colIdx].formula)){
+            if(typeof this.#columns[colIdx].formula === "function") return this.#columns[colIdx].formula(value);
+            else if(typeof this.#columns[colIdx].formula === "string" && this.#columns[colIdx].formula?.[0] === "=") return this.#execFormula(this.#columns[colIdx].formula, rowId, colName)
+        }
+
+        return value
+    }
+
+    #execFormula = (formula, rowId, colName) => {
+        if(formula.toString().substring(0,1)!=="=") return formula;
+        try {
+            return new Function('grid',"return "+this.#getFormularString(formula, rowId, colName))(this);
+        } catch (e) {
+            console.error(e)
+            return "#ERROR"
+        }
+    }
+
+    #getFormularString = (formula, rowId, colName) => {
+        let strFlag = false;
+        let fArray = new Array();
+        let fStr = "";
+
+        const functionList = ["ROWVALUE","VALUE","CONCAT","SUM","IF",/*"SUMA","EXPR","SUMIF","COUNTIF",*/]
+       
+        for(let idx=1;idx<formula.length;idx++){
+            if(["'",'"',"`"].includes(formula[idx])){
+                fArray.push({
+                    strFlag : strFlag,
+                    string  : fStr,
+                    extraString : formula[idx],
+                });
+                strFlag = !strFlag;
+                fStr = "";
+            }else if(["(",")",",","+","-","*","/","<",">","="].includes(formula[idx])){
+                fArray.push({
+                    strFlag : strFlag,
+                    string  : fStr,
+                    extraString : formula[idx],
+                });
+                fStr = "";
+            }else if(!strFlag){
+                if(formula[idx]!==" "){
+                    fStr += formula[idx]
+                }
+            }else{
+                fStr += formula[idx]
+            }
+        }
+
+        if(fStr!=="") fArray.push({
+            strFlag : strFlag,
+            string  : fStr,
+        });
+
+        let fString = ""
+
+        for(let idx=0;idx<fArray.length;idx++){
+            let fTarget = fArray[idx];
+            let cFlag = false;
+
+            if(functionList.includes(fTarget.string.trim().toUpperCase())){
+                fString += "grid.";
+            }else{
+                cFlag = this.#columnsOption.get("columnName").has(fTarget.string.trim())
+            }
+
+            if(cFlag){
+                if(!fTarget.strFlag) fString += "grid.ROWVALUE(" + rowId + ",`" + colName + "`,`";
+            }
+
+            if(functionList.includes(fTarget.string.trim().toUpperCase())){
+                fString += fTarget.string.toString().toUpperCase();
+            }else fString += fTarget.string;
+
+            if(cFlag){
+                if(!fTarget.strFlag) fString += "`)"
+            }
+            
+            if(fTarget.extraString !== undefined && fTarget.extraString !== null){
+                fString += fTarget.extraString;
+                if(functionList.includes(fTarget.string.trim().toUpperCase())){
+                    fString += rowId + ",`" + colName + "`,"
+                }
+            }
+        }
+        //console.log(fString)
+        return fString;
+    }
+
+    CONCAT(rowId,colName,...str){
+        if(str.includes("#ERROR")) return "#ERROR";
+        if(str.includes("#NaN")) return "#NaN";
+        return str.join("")
+    }
+
+    /**
+     * 컬럼명만 입력했을 때, 값을 가져오기 위해 만든 것
+     */
+    ROWVALUE(rowId,colName,...option){
+        if(option.includes("#ERROR")) return "#ERROR";
+        if(option.includes("#NaN")) return "#NaN";
+        if(option.length !== 1) return "#ERROR"
+        let showOrgRowIdx = this.#getShowOrgDataIndexById(rowId);
+        return this.getCellValue(showOrgRowIdx,option[0]);
+    }
+
+    VALUE(rowId,colName,...option){
+        if(option.includes("#ERROR")) return "#ERROR";
+        if(option.includes("#NaN")) return "#NaN";
+        if(option.length !== 2) return "#ERROR"
+        return this.getCellValue(option[0],option[1]);
+    }
+
+    SUM(rowId,colName,...option){
+        // ex) =SUM('COL_1','COL_2','COL_3')
+
+        if(option.includes("#ERROR")) return "#ERROR";
+        if(option.includes("#NaN")) return "#NaN";
+        let showOrgRowIdx = this.#getShowOrgDataIndexById(rowId);
+        let sum = 0;
+
+        for(let idx=0;idx<option.length;idx++){
+            if(isNaN(Number(option[idx]))) return "#NaN"
+            
+            sum += Number(option[idx]);
+        }
+
+        return sum
+    }
+
+    IF(rowId,colName,...option){
+        if(option.includes("#ERROR")) return "#ERROR";
+        if(option.includes("#NaN")) return "#NaN";
+        if(option.length !== 3) return "#ERROR"
+
+        let condition;
+
+        let trueValue;
+
+        try {
+            trueValue = option[1];
+        } catch (error) {
+            trueValue = his.#execFormula("=" + option[1],rowId,colName);
+        }
+
+        let falseValue;
+
+        try {
+            falseValue = option[2];
+        } catch (error) {
+            falseValue = his.#execFormula("=" + option[2],rowId,colName);
+        }
+
+        try {
+            condition = option[0];
+            if(typeof condition === "boolean") return (condition?trueValue:falseValue);
+        } catch (error) {
+            
+        }
+
+        return (this.#execFormula("="+condition,rowId,colName)?trueValue:falseValue);
     }
 
     #setCellValue = (rowIdx,colName,value, renderYn=true, undoYn=true, undoNumber, redoClearYn=true, undoSelectArray, undoCurInfo) => {
