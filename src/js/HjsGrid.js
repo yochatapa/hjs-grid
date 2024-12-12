@@ -961,7 +961,7 @@ class HjsGrid {
                     
                     this.#setNativeEvent(labelEl,"mousedown",this.#sortEvent,[realColIdx])
                     this.#setNativeEvent(sortDiv,"mousedown",this.#sortEvent,[realColIdx])
-                    this.#setNativeEvent(sortDiv,"touchstart",this.#sortEvent,[realColIdx])
+                    this.#setNativeEvent(sortDiv,"touchend",this.#sortEvent,[realColIdx])
                 }
 
                 if(!this.#isUN(colInfo.filter) &&(colInfo.filter === true || typeof colInfo.filter === "object")){
@@ -975,7 +975,7 @@ class HjsGrid {
                     filterDiv.classList.add("hjs-grid-pointer");
 
                     this.#setNativeEvent(filterDiv,"mousedown",this.#filterEvent,[realColIdx])
-                    this.#setNativeEvent(filterDiv,"touchstart",this.#filterEvent,[realColIdx])
+                    this.#setNativeEvent(filterDiv,"touchend",this.#filterEvent,[realColIdx])
                 }
 
                 divEl.append(sortFilter)
