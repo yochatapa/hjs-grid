@@ -158,13 +158,15 @@
                     break;
                 case 1 :
                     colJson["type"] = "number";
+                    colJson["formula"] = (value)=>"$" + value;
                     colJson["filter"] = {
                         //filterType : ["eq","ne","gt","ge","lt","le"]
                     }
                     break;
                 case 2 :
                 case 3 :
-                    colJson["filter"] = true
+                    colJson["filter"] = true;
+                    //colJson["formula"] = `=CONCAT("$",CELL(0,"COL_11"))`;
                     break;
                 case 8 : 
                     colJson["fixed"] = true;
@@ -288,7 +290,7 @@
             },
             body : {
                 cell : {
-                    height : 20,
+                    height : 40,
                     tooltip : true,
                 },
                 row : {
