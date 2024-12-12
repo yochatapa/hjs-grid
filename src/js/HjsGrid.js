@@ -3405,23 +3405,23 @@ class HjsGrid {
 
         if(!this.#isUN(this.#columns[colIdx].formula)){
             if(typeof this.#columns[colIdx].formula === "function") return this.#columns[colIdx].formula(value);
-            else if(typeof this.#columns[colIdx].formula === "string" && this.#columns[colIdx].formula?.[0] === "=") return this.#execFormula(this.#columns[colIdx].formula, rowId, colName)
+            else if(typeof this.#columns[colIdx].formula === "string" && this.#columns[colIdx].formula?.[0] === "=") return this.#execFormula(this.#columns[colIdx].formula, rowId, colName, value)
         }
 
         return value
     }
 
-    #execFormula = (formula, rowId, colName) => {
+    #execFormula = (formula, rowId, colName, value) => {
         if(formula.toString().substring(0,1)!=="=") return formula;
         try {
-            return new Function('grid',"return "+this.#getFormulaString(formula, rowId, colName))(this);
+            return new Function('grid',"return "+this.#getFormulaString(formula, rowId, colName, value))(this);
         } catch (e) {
             console.error(e)
             return "#ERROR"
         }
     }
 
-    #getFormulaString = (formula, rowId, colName) => {
+    #getFormulaString = (formula, rowId, colName, value) => {
         let strFlag = false;
         let fArray = new Array();
         let fStr = "";
@@ -3471,15 +3471,21 @@ class HjsGrid {
             }
 
             if(cFlag){
-                if(!fTarget.strFlag) fString += "grid.ROWVALUE(" + rowId + ",`" + colName + "`,`";
+                if(!fTarget.strFlag){
+                    if(this.#isUN(value) && colName !== fTarget.string) fString += "grid.ROWVALUE(" + rowId + ",`" + colName + "`,`";
+                    else fString += `"${value}"`
+                }
             }
 
             if(functionList.includes(fTarget.string.trim().toUpperCase())){
                 fString += fTarget.string.toString().toUpperCase();
-            }else fString += fTarget.string;
+            }else if(!(cFlag && !fTarget.strFlag && (!this.#isUN(value) || colName === fTarget.string)))
+                fString += fTarget.string;
 
             if(cFlag){
-                if(!fTarget.strFlag) fString += "`)"
+                if(!fTarget.strFlag){
+                    if(this.#isUN(value) && colName !== fTarget.string) fString += "`)"
+                }
             }
             
             if(fTarget.extraString !== undefined && fTarget.extraString !== null){
