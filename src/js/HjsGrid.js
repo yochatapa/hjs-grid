@@ -1296,7 +1296,7 @@ class HjsGrid {
                 else divEl.style.justifyContent = "center";
 
                 let colName = colInfo.name
-                labelEl.innerText = this.#data.get("showData")?.[rowIdx]?.[colName]??""
+                labelEl.innerText = this.#getFormulaValue(rowIdx,colName);
                     
                 divEl.append(labelEl);
 
