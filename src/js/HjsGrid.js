@@ -1,3 +1,22 @@
+var HjsGridArray = [];
+
+window.addEventListener("resize", e => {
+    console.log(e)
+    HjsGridArray.forEach(grid=>{
+        grid.deleteElWidth();
+        grid.deleteElHeight();
+        grid.el.get("middle").style.width = "0px";
+    })
+
+    setTimeout(()=>{
+        HjsGridArray.forEach(grid=>{
+            grid.reRenderGrid({
+                resize : true
+            });
+        })
+    },4)
+})
+
 class HjsGrid {
     #option; #columns; #grid; #utils; #data; #header; #summary; #cell; #row; #columnsOption; #style; #left;
   
@@ -17,9 +36,7 @@ class HjsGrid {
         this.#setOption();
         this.#setLayout();
 
-        window.addEventListener("resize", e => {
-            this.#reRenderGrid();
-        })
+        HjsGridArray.push(this)
         
         this.#renderGrid();
     }
@@ -132,6 +149,8 @@ class HjsGrid {
         this.#utils = new Map();
 
         this.#utils.set("lang","ko");
+
+        this.#utils.set("el", new Map());
         
         this.#utils.set("undoNumber",0);
         this.#utils.set("redoArray",new Array())
@@ -815,11 +834,12 @@ class HjsGrid {
         this.#renderGrid(option);
     }
 
-    #renderGrid = (option) => {
+    #renderGrid = (option) => {        
         this.#removeChildAll(this.el.get("leftHeaderTableTbody"));
         this.#renderLeftHeader();
-        this.el.get("middle").style.width = "calc(100% - "+this.el.get("left").getBoundingClientRect().width+"px)"
-        this.#renderMiddle();
+        console.log(option,this.#utils.get("scroll").get("elWidth"))
+        //this.el.get("middle").style.width = "calc(100% - "+this.el.get("left").getBoundingClientRect().width+"px)"
+        this.#renderMiddle(option); 
         this.#renderLeftSummary();
         this.#renderLeftBody();
         this.#renderRight();   
@@ -1491,17 +1511,23 @@ class HjsGrid {
         
     }
 
-    #renderMiddle = () => {
+    #renderMiddle = (option) => {
         if(this.#columnsOption.get("columnsTotalWidth")>this.el.get("middleBody").getBoundingClientRect().width) this.el.get("scroll").get("horizontal").get("scrollBar").style.display = "flex";
         else this.el.get("scroll").get("horizontal").get("scrollBar").style.display = "none";
 
         const ROW_HEIGHT = this.#cell.get("height");
         const DATA_LENGTH = this.#data.get("showData").length;
 
+        const WIDTH_FLAG = this.#isUN(this.#utils.get("scroll").get("elWidth")) || option?.resize === true;
+        const HEIGHT_FLAG = this.#isUN(this.#utils.get("scroll").get("elHeight")) || option?.resize === true;
+        
         if(ROW_HEIGHT*DATA_LENGTH > this.el.get("middleBody").getBoundingClientRect().height) this.el.get("scroll").get("vertical").get("scrollBar").style.display = "flex";
         else this.el.get("scroll").get("vertical").get("scrollBar").style.display = "none";
         
-        this.#utils.get("scroll").set("elWidth",this.el.get("middleBody").getBoundingClientRect().width)
+        if(WIDTH_FLAG){
+            this.el.get("middle").style.width = this.el.get("middleBody").getBoundingClientRect().width + "px";
+            this.#utils.get("scroll").set("elWidth",this.el.get("middleBody").getBoundingClientRect().width)
+        }
 
         this.#renderHorizontalScrollBar();
 
@@ -1525,11 +1551,14 @@ class HjsGrid {
             this.#renderSummary();
         }
 
-        this.#utils.get("scroll").set("elHeight",this.el.get("middleBody").getBoundingClientRect().height)
+        if(HEIGHT_FLAG) if(this.el.get("middleBody").getBoundingClientRect().height > this.#cell.get("height")) this.#utils.get("scroll").set("elHeight",this.el.get("middleBody").getBoundingClientRect().height)
 
         this.#renderVerticalScrollBar();
 
         if(this.#utils.get("scroll").get("elHeight") > 0) this.#renderBody();
+
+        if(WIDTH_FLAG) this.#utils.get("scroll").set("elWidth",this.el.get("middleBody").getBoundingClientRect().width)
+        if(HEIGHT_FLAG) if(this.el.get("middleBody").getBoundingClientRect().height > this.#cell.get("height")) this.#utils.get("scroll").set("elHeight",this.el.get("middleBody").getBoundingClientRect().height)
     }
 
     #renderRight = () => {
@@ -9236,6 +9265,17 @@ class HjsGrid {
 
         this.#reRenderGrid();
     }
+
+    getElWidth = () => this.#utils.get("scroll").get("elWidth");
+    setElWidth = (elWidth) => this.#utils.get("scroll").set("elWidth",elWidth);
+    deleteElWidth = () => this.#utils.get("scroll").get("elWidth");
+
+    getElHeight = () => this.#utils.get("scroll").get("elHeight");
+    setElHeight = (elHeight) => this.#utils.get("scroll").set("elHeight",elHeight);
+    deleteElHeight = () => this.#utils.get("scroll").delete("elHeight");
+
+    reRenderGrid = (option) => this.#reRenderGrid(option);
+
 
     /**
      * util 내부 함수

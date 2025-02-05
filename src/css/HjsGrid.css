@@ -1,7 +1,5 @@
 .hjs-grid {
     box-sizing: border-box;
-    width: 100%;
-    height: 50%;
     display: flex;
 
     /* container */
@@ -971,15 +969,15 @@ span.hjs-grid-filter-button:after {
 }
 
 .hjs-grid-insert-row>td{
-    background-color: #b6d2ff !important;
+    background-color: #bfd8ff !important;
 }
 
 .hjs-grid-update-row>td{
-    background-color: #a0ffa3 !important;
+    background-color: #bfffc1 !important;
 }
 
 .hjs-grid-delete-row>td{
-    background-color: #ffb7b7 !important;
+    background-color: #ffcece !important;
 }
 
 /* select */
