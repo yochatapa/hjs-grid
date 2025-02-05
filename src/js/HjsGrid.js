@@ -3012,7 +3012,7 @@ class HjsGrid {
                         
                         if(curInfo.rowIdx !== curElInfo?.rowIdx || curInfo.colIdx !== curElInfo?.colIdx){
                             this.#createEditor(curInfo.rowIdx,curInfo.colIdx); 
-                        }else if(curInfo.rowIdx === curElInfo?.rowIdx && curInfo.colIdx === curElInfo?.colIdx && curValue.toString() !== this.el.get("middleBodySelectCurrentEditor")?.value?.toString()){
+                        }else if(curInfo.rowIdx === curElInfo?.rowIdx && curInfo.colIdx === curElInfo?.colIdx && curValue?.toString() !== this.el.get("middleBodySelectCurrentEditor")?.value?.toString()){
                             this.el.get("middleBodySelectCurrentEditor").value = curValue;
                         }
                     }else{
@@ -7036,9 +7036,9 @@ class HjsGrid {
         let gridInfo = this.el.get("grid").getBoundingClientRect();
         let tdInfo = e.target.closest("td").getBoundingClientRect();
         let deInfo = document.documentElement.getBoundingClientRect();
-        
+        console.log(tdInfo,deInfo,)
         filterPopup.style.left = (tdInfo.x + Math.min(deInfo.width-(tdInfo.x+this.el.get("filterPopup").getBoundingClientRect().width),0)) + "px"
-        filterPopup.style.top = (tdInfo.height + (tdInfo.y - gridInfo.y)) + "px"
+        filterPopup.style.top = (gridInfo.y + tdInfo.height + (tdInfo.y - gridInfo.y)) + "px"
     }
 
     #createFilterTextPopup = (colIdx,con) => {
