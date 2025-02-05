@@ -207,7 +207,7 @@ class HjsGrid {
             this.#header = new Map();
 
             if(!this.#header.has("row")){
-                this.#header.set("row",0)
+                this.#header.set("row",1)
             }
         }
 
