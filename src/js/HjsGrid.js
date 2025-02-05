@@ -954,7 +954,10 @@ class HjsGrid {
 
                     sortFilter.append(sortDiv)
 
-                    
+                    if(rowIdx !== "first"){
+                        //nameLabel.innerText = this.#isUN(title)?(this.#columns[colIdx].title??""):(title??"");
+                        divEl.style.maxHeight = this.#header.get("height") - 4  + "px";
+                    }
 
                     divEl.classList.add("hjs-grid-pointer");
                     labelEl.classList.add("hjs-grid-pointer");
@@ -1000,6 +1003,7 @@ class HjsGrid {
             tdEl.style.height = "0px"
         }else{
             tdEl.style.height = this.#header.get("height") + "px";
+            tdEl.style.maxHeight = this.#header.get("height") + "px";
             tdEl.setAttribute("rowspan",this.#header.get("row"))
         }                
 
@@ -1029,6 +1033,12 @@ class HjsGrid {
             if(horizontalAlign === "left") divEl.style.justifyContent = "flex-start";
             else if(horizontalAlign === "right") divEl.style.justifyContent = "flex-end";
             else divEl.style.justifyContent = "center";
+
+            if(rowIdx !== "first"){
+                //nameLabel.innerText = this.#isUN(title)?(this.#columns[colIdx].title??""):(title??"");
+                divEl.style.maxHeight = this.#header.get("height") - 4  + "px";
+            }
+        
             
             if(!this.#isUN(this.#left.get("checkbox").title)){
                 let labelEl = document.createElement("label");
@@ -1060,6 +1070,7 @@ class HjsGrid {
             tdEl.style.height = "0px"
         }else{
             tdEl.style.height = this.#header.get("height") + "px";
+            tdEl.style.maxHeight = this.#header.get("height") + "px";
             tdEl.setAttribute("rowspan",this.#header.get("row"))
         }   
         
@@ -1078,6 +1089,11 @@ class HjsGrid {
         if(horizontalAlign === "left") divEl.style.justifyContent = "flex-start";
         else if(horizontalAlign === "right") divEl.style.justifyContent = "flex-end";
         else divEl.style.justifyContent = "center";
+
+        if(rowIdx !== "first"){
+            //nameLabel.innerText = this.#isUN(title)?(this.#columns[colIdx].title??""):(title??"");
+            divEl.style.maxHeight = this.#header.get("height") - 4  + "px";
+        }
         
         let labelEl = document.createElement("label");
         labelEl.classList.add("hjs-grid-left-header-table-tbody-tr-td-div-label");
@@ -1104,6 +1120,7 @@ class HjsGrid {
             tdEl.style.height = "0px"
         }else{
             tdEl.style.height = this.#header.get("height") + "px";
+            tdEl.style.maxHeight = this.#header.get("height") + "px";
             tdEl.setAttribute("rowspan",this.#header.get("row"))
         }   
         
@@ -1122,6 +1139,11 @@ class HjsGrid {
         if(horizontalAlign === "left") divEl.style.justifyContent = "flex-start";
         else if(horizontalAlign === "right") divEl.style.justifyContent = "flex-end";
         else divEl.style.justifyContent = "center";
+
+        if(rowIdx !== "first"){
+            //nameLabel.innerText = this.#isUN(title)?(this.#columns[colIdx].title??""):(title??"");
+            divEl.style.maxHeight = this.#header.get("height") - 4  + "px";
+        }
         
         let labelEl = document.createElement("label");
         labelEl.classList.add("hjs-grid-left-header-table-tbody-tr-td-div-label");
