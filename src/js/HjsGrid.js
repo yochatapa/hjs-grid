@@ -230,7 +230,7 @@ class HjsGrid {
             }
         }
 
-        if(!this.#header.has("height")) this.#header.set("height",20);
+        if(!this.#header.has("height")) this.#header.set("height",50);
 
         if(this.#header.has("mergeInfo")){
             this.#header.set("orgMergeInfo",this.#deepCopy(this.#header.get("mergeInfo")))
