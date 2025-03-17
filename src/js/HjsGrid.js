@@ -4393,10 +4393,10 @@ class HjsGrid {
         
         if(e.deltaX !== 0){
             if(e.deltaX > 0){
-                PASSED_COL_COUNT += 1
+                PASSED_COL_COUNT += Math.round((e.deltaX)/100)
             }
             else{
-                PASSED_COL_COUNT -= 1
+                PASSED_COL_COUNT += Math.round((e.deltaX)/100)
             }
             PASSED_COL_COUNT = Math.max(Math.min(PASSED_COL_COUNT,SCROLL_COL_COUNT),0)
             
