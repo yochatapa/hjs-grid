@@ -837,7 +837,6 @@ class HjsGrid {
     #renderGrid = (option) => {        
         this.#removeChildAll(this.el.get("leftHeaderTableTbody"));
         this.#renderLeftHeader();
-        console.log(option,this.#utils.get("scroll").get("elWidth"))
         //this.el.get("middle").style.width = "calc(100% - "+this.el.get("left").getBoundingClientRect().width+"px)"
         this.#renderMiddle(option); 
         this.#renderLeftSummary();
@@ -3015,7 +3014,7 @@ class HjsGrid {
                 let top = (curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
                 
                 let height = this.#cell.get("height")
-
+                
                 if(top+height<=EL_HEIGHT){
                     curDivEl.style.top = top + "px"
                     curDivEl.style.height = height + "px"
@@ -3024,8 +3023,9 @@ class HjsGrid {
                     let left = (this.#columnsOption.get("columnBeforeSum")[curInfo.colIdx] - this.#columnsOption.get("columnBeforeSum")[realColIdx])
                     
                     let width = this.#columns[curInfo.colIdx].width
-
-                    if(left+width <= EL_WIDTH){
+                    
+                    // left+width <= EL_WIDTH
+                    if(true){
                         curDivEl.style.left = left + "px";
                         curDivEl.style.width = width + "px";
                         curDivEl.style.opacity = "1";
@@ -3827,7 +3827,7 @@ class HjsGrid {
         
         this.#utils.get("select").set("bodySelectArray",sa);
         
-        if(curInfo.rowIdx >= SHOW_DATA_INDEX){
+        if(curInfo?.rowIdx >= SHOW_DATA_INDEX){
             curInfo.rowIdx--;
             if(this.#data.get("showData").length === 0 || (saFlag && curInfo.rowIdx<0)) this.#utils.get("select").set("bodySelectCurrentInfo",null)
             else{ 
