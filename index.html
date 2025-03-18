@@ -25,7 +25,7 @@
 
         [id^='grid']{
             width: 100%;
-            height: 500px;
+            height: 480px;
         }
     </style>
     <script>
@@ -121,7 +121,7 @@
 
             for(let idx2=0;idx2<COL_COUNT;idx2++){
                 //tempData["COL_"+idx2] = idx + "/" + idx2;
-                tempData["COL_"+idx2] = Math.round(Math.random()*100)%100;
+                tempData["COL_"+idx2] = Math.round((idx)/5)/* + " / " + idx2*/;
             }
 
             
@@ -160,6 +160,7 @@
                         }
                     }
 
+                    
                     colJson["type"] = "text"
                     colJson["filter"] = {
                         //filterType : ["eq","ne",],
@@ -171,11 +172,12 @@
                     colJson["filter"] = {
                         //filterType : ["eq","ne","gt","ge","lt","le"]
                     }
+                    colJson["rowspan"] = true
                     break;
                 case 2 :
                 case 3 :
                     colJson["filter"] = true;
-                    colJson["formula"] = `=CONCAT("$",COL_3)`;
+                    colJson["formula"] = `=CONCAT("~~~",COL_3)`;
                     break;
                 case 8 : 
                     colJson["fixed"] = true;
@@ -375,9 +377,6 @@
                     height : 40,
                     tooltip : true,
                 },
-                row : {
-
-                }
             },
             left : {
                 checkbox : {
