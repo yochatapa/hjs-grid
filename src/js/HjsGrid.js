@@ -1956,39 +1956,42 @@ class HjsGrid {
         
         for(let colIdx=START_INDEX;colIdx<END_INDEX;colIdx++){
             if(this.#columns[colIdx].hidden === true  || this.#columns[colIdx].fixed === true) continue;
+            const NEW_CELL = this.#createCell(rowIdx,colIdx);
             if(!displayedColumnIdx.get(colIdx)){
-                const NEW_CELL = this.#createCell(rowIdx,colIdx);
-
-                if(displayedColumnIdx.size === 0){
-                    this.#utils.get("scroll").get("displayedRow").get(rowIdx).insertAdjacentElement("afterbegin",NEW_CELL);
-                }else{
-                    const KEY_ARRAY = displayedColumnIdx.keys().toArray().filter(value => {return value !== "virtualLeft" && value !== "virtualRight"});
-                    const MIN_KEY = Math.min(...KEY_ARRAY);
-                    const MAX_KEY = Math.max(...KEY_ARRAY);
-                    
-                    if(colIdx<=MIN_KEY){
+                if(!this.#isUN(NEW_CELL)){
+                    if(displayedColumnIdx.size === 0){
                         this.#utils.get("scroll").get("displayedRow").get(rowIdx).insertAdjacentElement("afterbegin",NEW_CELL);
-                    }else if(colIdx>MAX_KEY){
-                        this.#utils.get("scroll").get("displayedRow").get(rowIdx).insertAdjacentElement("beforeend",NEW_CELL);
                     }else{
-                        const SORT_KEY_ARRAY = KEY_ARRAY.sort((a, b) => a - b);
+                        const KEY_ARRAY = displayedColumnIdx.keys().toArray().filter(value => {return value !== "virtualLeft" && value !== "virtualRight"});
+                        const MIN_KEY = Math.min(...KEY_ARRAY);
+                        const MAX_KEY = Math.max(...KEY_ARRAY);
                         
-                        let targetIdx;
-
-                        for(let idx2=0;idx2<SORT_KEY_ARRAY.length;idx2++){
-                            if(SORT_KEY_ARRAY[idx2] >= colIdx) break;
-                            targetIdx = SORT_KEY_ARRAY[idx2];
-                        }
-                        
-                        if(this.#isUN(targetIdx)){
-                            displayedColumnIdx.get("virtualLeft").insertAdjacentElement("afterend",NEW_CELL);
+                        if(colIdx<=MIN_KEY){
+                            this.#utils.get("scroll").get("displayedRow").get(rowIdx).insertAdjacentElement("afterbegin",NEW_CELL);
+                        }else if(colIdx>MAX_KEY){
+                            this.#utils.get("scroll").get("displayedRow").get(rowIdx).insertAdjacentElement("beforeend",NEW_CELL);
                         }else{
-                            displayedColumnIdx.get(targetIdx).insertAdjacentElement("afterend",NEW_CELL)    
+                            const SORT_KEY_ARRAY = KEY_ARRAY.sort((a, b) => a - b);
+                            
+                            let targetIdx;
+    
+                            for(let idx2=0;idx2<SORT_KEY_ARRAY.length;idx2++){
+                                if(SORT_KEY_ARRAY[idx2] >= colIdx) break;
+                                targetIdx = SORT_KEY_ARRAY[idx2];
+                            }
+                            
+                            if(this.#isUN(targetIdx)){
+                                displayedColumnIdx.get("virtualLeft").insertAdjacentElement("afterend",NEW_CELL);
+                            }else{
+                                displayedColumnIdx.get(targetIdx).insertAdjacentElement("afterend",NEW_CELL)    
+                            }
                         }
                     }
+                    displayedColumnIdx.set(colIdx,NEW_CELL);
                 }
-
-                displayedColumnIdx.set(colIdx,NEW_CELL);
+            }else if(displayedColumnIdx.get(colIdx) && this.#isUN(NEW_CELL)){
+                displayedColumnIdx.get(colIdx).remove();
+                displayedColumnIdx.delete(colIdx)
             }
         }
         
@@ -2015,13 +2018,37 @@ class HjsGrid {
     #createCell = (rowIdx,colIdx) => {
         let columnInfo = this.#columns[colIdx];
 
+        let colName = this.getColumnNameByIndex(colIdx)
+        let rowspanNum = 0;
+        let rowspanYn = false
+        
+        if(!this.#isUN(this.#columns[colIdx]?.rowspan)){
+            if(this.#columns[colIdx]?.rowspan){
+                let deleteYn = false;
+                const END_INDEX = Math.min(this.#utils.get("scroll").get("passedRowCount") + this.#utils.get("scroll").get("visibleRowCount"),this.#data.get("showData").length);
+                let START_INDEX = ((END_INDEX === this.#data.get("showData").length)?this.#data.get("showData").length-this.#utils.get("scroll").get("visibleRowCount"):this.#utils.get("scroll").get("passedRowCount"));
+
+                if(rowIdx>0 && this.#data.get("showData")[rowIdx][colName] === this.#data.get("showData")[rowIdx-1][colName]) deleteYn = true;
+                if(rowIdx === START_INDEX) deleteYn = false;
+                
+                if(!deleteYn){
+                    for(let idx=rowIdx;idx<this.#data.get("showData").length;idx++){
+                        if(this.#data.get("showData")[rowIdx][colName] !== this.#data.get("showData")[idx][colName]) break;
+                        rowspanNum++;
+                    }
+
+                    if(rowspanNum > 1) rowspanYn = true;
+                }else return;
+            }
+        }
+
         const HEIGHT = this.#cell.get("height")
 
         let tdEl = document.createElement("td");
         tdEl.classList.add("hjs-grid-middle-body-table-tbody-tr-td")
         tdEl.style.minWidth = columnInfo.width + "px";
         tdEl.style.maxWidth = columnInfo.width + "px";
-        
+        if(rowspanYn) tdEl.setAttribute("rowspan",rowspanNum);
 
         if(rowIdx%2 === 0) tdEl.classList.add("even-cell")
         else tdEl.classList.add("odd-cell")
@@ -2046,7 +2073,9 @@ class HjsGrid {
         tdEl.style.height = HEIGHT + "px";
         tdEl.style.maxHeight = HEIGHT + "px";
 
-        let colName = this.getColumnNameByIndex(colIdx)
+        
+
+        
         
         nameLabel.innerText = this.#getFormulaValue(rowIdx,colName)
 
@@ -2224,7 +2253,7 @@ class HjsGrid {
         }
         
         let sameHiddenYn = (this.#columns[colIdx].hidden??false) === hidden
-        console.log(this.#columns[colIdx].hidden,hidden,sameHiddenYn)
+        
         this.#columns[colIdx].hidden = hidden;
         
         this.#setColumnsOption();
@@ -2336,8 +2365,13 @@ class HjsGrid {
                 showOrgData = showOrgData.toSorted((a,b) => {
                     let before,after;
                     if(colType === "number"){
-                        before = Number(a[colName]??"");
-                        after = Number(b[colName]??"");
+                        if(typeof a[colName] === "number" && typeof b[colName] === "number"){
+                            before = Number(a[colName]??"");
+                            after = Number(b[colName]??"");
+                        }else{
+                            before = (a[colName]??"").toString();
+                            after = (b[colName]??"").toString();
+                        }
                     }
                     else{
                         before = (a[colName]??"").toString();
@@ -4211,9 +4245,6 @@ class HjsGrid {
                 this.#utils.set("undoNumber",undoNumber)
             }
 
-            const MAX_VISIBLE_COL = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
-            const MIN_VISIBLE_COL = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
-
             this.#utils.get("undoArray").push({
                 "type"          : "insertColumn",
                 "colName"       : colName,
@@ -6084,7 +6115,6 @@ class HjsGrid {
             const SCROLL_ROW_COUNT = this.#utils.get("scroll").get("scrollRowCount");
             let PASSED_ROW_COUNT = this.#utils.get("scroll").get("passedRowCount");
             PASSED_ROW_COUNT = Math.max(Math.min(PASSED_ROW_COUNT+1,SCROLL_ROW_COUNT),0);
-            console.log(PASSED_ROW_COUNT)
             this.#utils.get("scroll").set("passedRowCount",PASSED_ROW_COUNT);
 
             this.#renderGrid();
@@ -7065,7 +7095,7 @@ class HjsGrid {
         let gridInfo = this.el.get("grid").getBoundingClientRect();
         let tdInfo = e.target.closest("td").getBoundingClientRect();
         let deInfo = document.documentElement.getBoundingClientRect();
-        console.log(tdInfo,deInfo,)
+
         filterPopup.style.left = (tdInfo.x + Math.min(deInfo.width-(tdInfo.x+this.el.get("filterPopup").getBoundingClientRect().width),0)) + "px"
         filterPopup.style.top = (gridInfo.y + tdInfo.height + (tdInfo.y - gridInfo.y)) + "px"
     }
