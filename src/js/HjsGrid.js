@@ -1908,7 +1908,12 @@ class HjsGrid {
 
     #createRow = rowIdx => {
         let trEl = document.createElement("tr");
-        trEl.classList.add("hjs-grid-middle-body-table-tbody-tr")
+        trEl.classList.add("hjs-grid-middle-body-table-tbody-tr");
+
+        const HEIGHT = this.#cell.get("height")
+
+        trEl.style.height = HEIGHT + "px";
+        trEl.style.minHeight = HEIGHT + "px";
 
         if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "I") trEl.classList.add("hjs-grid-insert-row");
         if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "U") trEl.classList.add("hjs-grid-update-row");
@@ -2019,7 +2024,8 @@ class HjsGrid {
         let columnInfo = this.#columns[colIdx];
 
         let colName = this.getColumnNameByIndex(colIdx)
-        let rowspanNum = 0;
+        let rowspanInfo = this.#getrowspanInfo(rowIdx,colIdx)
+        let rowspanNum = rowspanInfo[1];
         let rowspanYn = false
         
         if(!this.#isUN(this.#columns[colIdx]?.rowspan)){
@@ -2032,12 +2038,7 @@ class HjsGrid {
                 if(rowIdx === START_INDEX) deleteYn = false;
                 
                 if(!deleteYn){
-                    for(let idx=rowIdx;idx<this.#data.get("showData").length;idx++){
-                        if(this.#data.get("showData")[rowIdx][colName] !== this.#data.get("showData")[idx][colName]) break;
-                        rowspanNum++;
-                    }
-
-                    if(rowspanNum > 1) rowspanYn = true;
+                    if(rowspanInfo[0] === rowIdx && rowspanNum > 1) rowspanYn = true;
                 }else return;
             }
         }
@@ -2048,6 +2049,7 @@ class HjsGrid {
         tdEl.classList.add("hjs-grid-middle-body-table-tbody-tr-td")
         tdEl.style.minWidth = columnInfo.width + "px";
         tdEl.style.maxWidth = columnInfo.width + "px";
+        
         if(rowspanYn) tdEl.setAttribute("rowspan",rowspanNum);
 
         if(rowIdx%2 === 0) tdEl.classList.add("even-cell")
@@ -2499,350 +2501,401 @@ class HjsGrid {
     #calcBodySelect = (setYn=false) => {
         let selectArray = this.#utils.get("select").get("bodySelectArray");
         let selectInfo = this.#utils.get("select").get("bodySelectInfo");
-        let newSelectArray = new Array();
+        
+        let newSelectArray = this.#deepCopy(selectArray);
 
         if(this.#isUN(selectInfo) && selectArray.length>0){
             selectInfo = selectArray[0];
             selectInfo["deleteYn"] = false;
         }
 
-        for(let idx=0;idx<selectArray.length;idx++){
-            let sa = selectArray[idx];
+        const selectInfoArray = new Array();
+        selectInfoArray.push(selectInfo)
 
-            if(sa.startRowIndex > selectInfo.endRowIndex
-                || sa.endRowIndex < selectInfo.startRowIndex
-                || sa.startColIndex > selectInfo.endColIndex
-                || sa.endColIndex < selectInfo.startColIndex
-            ){
-                newSelectArray.push(sa)
-            }else{
-                /*선택한 박스의 시작 row가 기존 박스의 시작 row 보다 위에 있을 때*/
-                /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 위에 있을 때*/
-                if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
-                && sa.endRowIndex >= selectInfo.endRowIndex
-                && sa.startColIndex >= selectInfo.startColIndex && sa.startColIndex <= selectInfo.endColIndex 
-                && sa.endColIndex >= selectInfo.endColIndex){
-                    if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.endRowIndex,
-                        startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex),
-                        endColIndex : sa.endColIndex
-                    })
+        const rowspanSet = new Set();
 
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.endRowIndex+1,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
-                && sa.endRowIndex >= selectInfo.endRowIndex
-                && sa.startColIndex <= selectInfo.startColIndex
-                && sa.endColIndex >= selectInfo.endColIndex){
-                    if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.endRowIndex,
-                        startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex),
-                        endColIndex : sa.endColIndex
-                    })
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.endRowIndex+1,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
-                && sa.endRowIndex >= selectInfo.endRowIndex
-                && sa.startColIndex <= selectInfo.startColIndex
-                && sa.endColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex){
-                    if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)
-                    })
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.endRowIndex+1,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
-                && sa.endRowIndex >= selectInfo.endRowIndex
-                && sa.startColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex
-                && sa.endColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.endRowIndex+1,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
+        for(let colIdx=selectInfo.startColIndex;colIdx<=selectInfo.endRowIndex;colIdx++){
+            let rowspanYn = this.#columns[colIdx].rowspan === true
+            
+            if(rowspanYn){
+                for(let rowIdx=selectInfo.startRowIndex;rowIdx<=selectInfo.endRowIndex;rowIdx++){
+                    let rowspanInfo = this.#getrowspanInfo(rowIdx,colIdx);
+
+                    let rowspanInfoStr = `${rowspanInfo[0]}|${Math.max(rowspanInfo[0] + rowspanInfo[1] - 1,rowspanInfo[0])}|${colIdx}`
+                    console.log(rowspanSet)
+                    if(rowspanInfo[1] > 1 && !rowspanSet.has(rowspanInfoStr)){
+                        if(rowspanInfo[0] < selectInfo.startRowIndex){
+                            selectInfoArray.push({
+                                deleteYn : selectInfo?.deleteYn
+                                , startRowIndex : rowspanInfo[0]
+                                , endRowIndex : Math.max(rowspanInfo[0],selectInfo.startRowIndex-1)
+                                , startColIndex : colIdx
+                                , endColIndex : colIdx
+                            })
+                        }
+                        if(rowspanInfo[0]+rowspanInfo[1]-1 > selectInfo.endRowIndex){
+                            selectInfoArray.push({
+                                deleteYn : selectInfo?.deleteYn
+                                , startRowIndex : Math.min(rowspanInfo[0]+rowspanInfo[1]-1, selectInfo.endRowIndex+1)
+                                , endRowIndex : rowspanInfo[0]+rowspanInfo[1]-1
+                                , startColIndex : colIdx
+                                , endColIndex : colIdx
+                            })
+                        }
+                        console.log("--------------------------------------",rowspanInfo)
+                        
+                        rowspanSet.add(rowspanInfoStr)
+                    }
+                    
                 }
-                /*선택한 박스의 시작 row가 기존 박스의 시작 row 보다 위에 있을 때*/
-                /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 밑에 있을 때*/
-                else if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
-                && sa.endRowIndex > selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex 
-                && sa.startColIndex >= selectInfo.startColIndex && sa.startColIndex <= selectInfo.endColIndex 
-                && sa.endColIndex >= selectInfo.endColIndex){
-                    if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex),
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
-                && sa.endRowIndex > selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex 
-                && sa.startColIndex <= selectInfo.startColIndex
-                && sa.endColIndex >= selectInfo.endColIndex){
-                    if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex),
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
-                && sa.endRowIndex > selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex 
-                && sa.startColIndex <= selectInfo.startColIndex
-                && sa.endColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex){
-                    if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)
-                    })
-                }else if(sa.startRowIndex >= selectInfo.startRowIndex && sa.startRowIndex <= selectInfo.endRowIndex 
-                && sa.endRowIndex >= selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex 
-                && sa.startColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex
-                && sa.endColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex){
-                }
-                /*선택한 박스의 시작 row가 기존 박스의 시작 row와 끝 row 사이에 있을 때*/
-                /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 위에 있을 때*/
-                else if(sa.startRowIndex <= selectInfo.startRowIndex
-                && sa.endRowIndex >= selectInfo.endRowIndex 
-                && sa.startColIndex >= selectInfo.startColIndex && sa.startColIndex <= selectInfo.endColIndex 
-                && sa.endColIndex >= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.startRowIndex-1,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.startRowIndex,
-                        endRowIndex : selectInfo.endRowIndex,
-                        startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex),
-                        endColIndex : sa.endColIndex
-                    })
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.endRowIndex+1,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex <= selectInfo.startRowIndex
-                && sa.endRowIndex >= selectInfo.endRowIndex 
-                && sa.startColIndex <= selectInfo.startColIndex
-                && sa.endColIndex >= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.startRowIndex-1,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.startRowIndex,
-                        endRowIndex : selectInfo.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.startRowIndex,
-                        endRowIndex : selectInfo.endRowIndex,
-                        startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex),
-                        endColIndex : sa.endColIndex
-                    })
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.endRowIndex+1,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex <= selectInfo.startRowIndex
-                && sa.endRowIndex >= selectInfo.endRowIndex 
-                && sa.startColIndex <= selectInfo.startColIndex
-                && sa.endColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.startRowIndex-1,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.startRowIndex,
-                        endRowIndex : selectInfo.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)
-                    })
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.endRowIndex+1,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex <= selectInfo.startRowIndex
-                && sa.endRowIndex >= selectInfo.endRowIndex 
-                && sa.startColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex
-                && sa.endColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.startRowIndex-1,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.endRowIndex+1,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                }
-                /*선택한 박스의 시작 row가 기존 박스의 시작 row와 끝 row 사이에 있을 때*/
-                /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 밑에 있을 때*/
-                else if(sa.startRowIndex <= selectInfo.startRowIndex
-                && sa.endRowIndex >= selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex 
-                && sa.startColIndex >= selectInfo.startColIndex && sa.startColIndex <= selectInfo.endColIndex 
-                && sa.endColIndex >= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.startRowIndex-1,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.startRowIndex,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex),
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex <= selectInfo.startRowIndex
-                && sa.endRowIndex >= selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex  
-                && sa.startColIndex <= selectInfo.startColIndex
-                && sa.endColIndex >= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.startRowIndex-1,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.startRowIndex,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.startRowIndex,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(selectInfo.endColIndex),
-                        endColIndex : sa.endColIndex
-                    })
-                }else if(sa.startRowIndex <= selectInfo.startRowIndex
-                && sa.endRowIndex >= selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex 
-                && sa.startColIndex <= selectInfo.startColIndex
-                && sa.endColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.startRowIndex-1,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
-                    if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)))
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : selectInfo.startRowIndex,
-                        endRowIndex : sa.endRowIndex,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(selectInfo.startColIndex)
-                    })
-                }else if(sa.startRowIndex <= selectInfo.startRowIndex
-                && sa.endRowIndex >= selectInfo.startRowIndex && sa.endRowIndex <= selectInfo.endRowIndex 
-                && sa.startColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex
-                && sa.endColIndex >= selectInfo.startColIndex && sa.endColIndex <= selectInfo.endColIndex){
-                    newSelectArray.push({
-                        deleteYn : false,
-                        startRowIndex : sa.startRowIndex,
-                        endRowIndex : selectInfo.startRowIndex-1,
-                        startColIndex : sa.startColIndex,
-                        endColIndex : sa.endColIndex
-                    })
+            }
+        }
+        console.log(selectInfo?.deleteYn)
+        for(let sIdx=0;sIdx<selectInfoArray.length;sIdx++){
+            let sInfo = selectInfoArray[sIdx];
+            let orgSelectArray = this.#deepCopy(newSelectArray);
+            for(let idx=0;idx<orgSelectArray.length;idx++){
+                let sa = orgSelectArray[idx];
+    
+                if(sa.startRowIndex > sInfo.endRowIndex
+                    || sa.endRowIndex < sInfo.startRowIndex
+                    || sa.startColIndex > sInfo.endColIndex
+                    || sa.endColIndex < sInfo.startColIndex
+                ){
+                    newSelectArray.push(sa)
+                }else{
+                    /*선택한 박스의 시작 row가 기존 박스의 시작 row 보다 위에 있을 때*/
+                    /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 위에 있을 때*/
+                    if(sa.startRowIndex >= sInfo.startRowIndex && sa.startRowIndex <= sInfo.endRowIndex 
+                    && sa.endRowIndex >= sInfo.endRowIndex
+                    && sa.startColIndex >= sInfo.startColIndex && sa.startColIndex <= sInfo.endColIndex 
+                    && sa.endColIndex >= sInfo.endColIndex){
+                        if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.endRowIndex,
+                            startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex),
+                            endColIndex : sa.endColIndex
+                        })
+    
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.endRowIndex+1,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex >= sInfo.startRowIndex && sa.startRowIndex <= sInfo.endRowIndex 
+                    && sa.endRowIndex >= sInfo.endRowIndex
+                    && sa.startColIndex <= sInfo.startColIndex
+                    && sa.endColIndex >= sInfo.endColIndex){
+                        if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.endRowIndex,
+                            startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex),
+                            endColIndex : sa.endColIndex
+                        })
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.endRowIndex+1,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex >= sInfo.startRowIndex && sa.startRowIndex <= sInfo.endRowIndex 
+                    && sa.endRowIndex >= sInfo.endRowIndex
+                    && sa.startColIndex <= sInfo.startColIndex
+                    && sa.endColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex){
+                        if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)
+                        })
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.endRowIndex+1,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex >= sInfo.startRowIndex && sa.startRowIndex <= sInfo.endRowIndex 
+                    && sa.endRowIndex >= sInfo.endRowIndex
+                    && sa.startColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex
+                    && sa.endColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.endRowIndex+1,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }
+                    /*선택한 박스의 시작 row가 기존 박스의 시작 row 보다 위에 있을 때*/
+                    /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 밑에 있을 때*/
+                    else if(sa.startRowIndex >= sInfo.startRowIndex && sa.startRowIndex <= sInfo.endRowIndex 
+                    && sa.endRowIndex > sInfo.startRowIndex && sa.endRowIndex <= sInfo.endRowIndex 
+                    && sa.startColIndex >= sInfo.startColIndex && sa.startColIndex <= sInfo.endColIndex 
+                    && sa.endColIndex >= sInfo.endColIndex){
+                        if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex),
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex >= sInfo.startRowIndex && sa.startRowIndex <= sInfo.endRowIndex 
+                    && sa.endRowIndex > sInfo.startRowIndex && sa.endRowIndex <= sInfo.endRowIndex 
+                    && sa.startColIndex <= sInfo.startColIndex
+                    && sa.endColIndex >= sInfo.endColIndex){
+                        if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex),
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex >= sInfo.startRowIndex && sa.startRowIndex <= sInfo.endRowIndex 
+                    && sa.endRowIndex > sInfo.startRowIndex && sa.endRowIndex <= sInfo.endRowIndex 
+                    && sa.startColIndex <= sInfo.startColIndex
+                    && sa.endColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex){
+                        if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)
+                        })
+                    }else if(sa.startRowIndex >= sInfo.startRowIndex && sa.startRowIndex <= sInfo.endRowIndex 
+                    && sa.endRowIndex >= sInfo.startRowIndex && sa.endRowIndex <= sInfo.endRowIndex 
+                    && sa.startColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex
+                    && sa.endColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex){
+                    }
+                    /*선택한 박스의 시작 row가 기존 박스의 시작 row와 끝 row 사이에 있을 때*/
+                    /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 위에 있을 때*/
+                    else if(sa.startRowIndex <= sInfo.startRowIndex
+                    && sa.endRowIndex >= sInfo.endRowIndex 
+                    && sa.startColIndex >= sInfo.startColIndex && sa.startColIndex <= sInfo.endColIndex 
+                    && sa.endColIndex >= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.startRowIndex-1,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.startRowIndex,
+                            endRowIndex : sInfo.endRowIndex,
+                            startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex),
+                            endColIndex : sa.endColIndex
+                        })
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.endRowIndex+1,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex <= sInfo.startRowIndex
+                    && sa.endRowIndex >= sInfo.endRowIndex 
+                    && sa.startColIndex <= sInfo.startColIndex
+                    && sa.endColIndex >= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.startRowIndex-1,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.startRowIndex,
+                            endRowIndex : sInfo.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.startRowIndex,
+                            endRowIndex : sInfo.endRowIndex,
+                            startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex),
+                            endColIndex : sa.endColIndex
+                        })
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.endRowIndex+1,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex <= sInfo.startRowIndex
+                    && sa.endRowIndex >= sInfo.endRowIndex 
+                    && sa.startColIndex <= sInfo.startColIndex
+                    && sa.endColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.startRowIndex-1,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.startRowIndex,
+                            endRowIndex : sInfo.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)
+                        })
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.endRowIndex+1,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex <= sInfo.startRowIndex
+                    && sa.endRowIndex >= sInfo.endRowIndex 
+                    && sa.startColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex
+                    && sa.endColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.startRowIndex-1,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.endRowIndex+1,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }
+                    /*선택한 박스의 시작 row가 기존 박스의 시작 row와 끝 row 사이에 있을 때*/
+                    /*선택한 박스의 끝 row가 기존 박스의 끝 row보다 밑에 있을 때*/
+                    else if(sa.startRowIndex <= sInfo.startRowIndex
+                    && sa.endRowIndex >= sInfo.startRowIndex && sa.endRowIndex <= sInfo.endRowIndex 
+                    && sa.startColIndex >= sInfo.startColIndex && sa.startColIndex <= sInfo.endColIndex 
+                    && sa.endColIndex >= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.startRowIndex-1,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.startRowIndex,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex),
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex <= sInfo.startRowIndex
+                    && sa.endRowIndex >= sInfo.startRowIndex && sa.endRowIndex <= sInfo.endRowIndex  
+                    && sa.startColIndex <= sInfo.startColIndex
+                    && sa.endColIndex >= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.startRowIndex-1,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.startRowIndex,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.startRowIndex,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : this.#columnsOption.get("visibleNextColumnIndex").get(sInfo.endColIndex),
+                            endColIndex : sa.endColIndex
+                        })
+                    }else if(sa.startRowIndex <= sInfo.startRowIndex
+                    && sa.endRowIndex >= sInfo.startRowIndex && sa.endRowIndex <= sInfo.endRowIndex 
+                    && sa.startColIndex <= sInfo.startColIndex
+                    && sa.endColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.startRowIndex-1,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                        if(!this.#isUN(this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)))
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sInfo.startRowIndex,
+                            endRowIndex : sa.endRowIndex,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(sInfo.startColIndex)
+                        })
+                    }else if(sa.startRowIndex <= sInfo.startRowIndex
+                    && sa.endRowIndex >= sInfo.startRowIndex && sa.endRowIndex <= sInfo.endRowIndex 
+                    && sa.startColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex
+                    && sa.endColIndex >= sInfo.startColIndex && sa.endColIndex <= sInfo.endColIndex){
+                        newSelectArray.push({
+                            deleteYn : false,
+                            startRowIndex : sa.startRowIndex,
+                            endRowIndex : sInfo.startRowIndex-1,
+                            startColIndex : sa.startColIndex,
+                            endColIndex : sa.endColIndex
+                        })
+                    }
                 }
             }
         }
         
-        if(selectInfo?.deleteYn === false) newSelectArray.push(selectInfo)
+        if(selectInfo?.deleteYn === false){
+            for(let sIdx=0;sIdx<selectInfoArray.length;sIdx++){
+                newSelectArray.push(selectInfoArray[sIdx]);
+            }
+        }
 
         //console.log(newSelectArray,selectArray,this.#utils.get("select").get("bodySelectInfo"))
         
         this.#renderBodySelect(newSelectArray);
 
-        if(setYn === true) this.#utils.get("select").set("bodySelectArray",newSelectArray);                
+        if(setYn === true) this.#utils.get("select").set("bodySelectArray",this.#deepCopy(newSelectArray));                
     }
 
     #renderLeftBodySelect = (newSelectArray) => {
@@ -3044,12 +3097,13 @@ class HjsGrid {
                 let curDivEl = this.el.get("middleBodySelectCurrent")
                 curDivEl.classList.add("hjs-grid-selected-current-cell");
                 curDivEl.style.position = "absolute";
+
+                let rowspanYn = this.#columns[curInfo.colIdx].rowspan === true
+                let rowspanInfo = this.#getrowspanInfo(curInfo.rowIdx,curInfo.colIdx);
+                let top = ((curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1)) + (rowspanYn?rowspanInfo[0]-curInfo.rowIdx:0))*this.#cell.get("height");
+                let height = rowspanYn?this.#cell.get("height") * rowspanInfo[1]:this.#cell.get("height");
                 
-                let top = (curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
-                
-                let height = this.#cell.get("height")
-                
-                if(top+height<=EL_HEIGHT){
+                if((top+height<=EL_HEIGHT && !rowspanYn) || (rowspanYn)){
                     curDivEl.style.top = top + "px"
                     curDivEl.style.height = height + "px"
                     
@@ -3485,6 +3539,32 @@ class HjsGrid {
         }
 
         return;
+    }
+
+    #getrowspanInfo = (rowIdx, colName) => {
+        let colIdx;
+        if(typeof colName === "number"){
+            colIdx = colName
+            colName = this.getColumnNameByIndex(colIdx)
+        }else{
+            colIdx = this.getColumnIndexByName(colName)
+        }
+
+        let rowspanNum = 0;
+
+        let startIndex = rowIdx;
+
+        for(let idx=rowIdx-1;idx>=0;idx--){
+            if(this.#data.get("showData")[rowIdx][colName] !== this.#data.get("showData")[idx][colName]) break;
+            startIndex--;
+        }
+        
+        for(let idx=startIndex;idx<this.#data.get("showData").length;idx++){
+            if(this.#data.get("showData")[rowIdx][colName] !== this.#data.get("showData")[idx][colName]) break;
+            rowspanNum++;
+        }
+
+        return [startIndex,rowspanNum];
     }
 
     #getFormulaValue = (rowIdx, colName) => {
@@ -5142,6 +5222,7 @@ class HjsGrid {
         if(!this.#isUN(this.el.get("leftBodySelectCurrentEditor"))) this.el.get("leftBodySelectCurrentEditor").style.opacity = "0";
         if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
             e.preventDefault();
+            this.#utils.get("select").set("rowspanSet", new Set())
             this.el.get("middleBody").scrollLeft = this.#utils.get("scroll").get("scrollLeft")
             if(this.#utils.get("current").get("firstClick") === false && !RIGHT_FLAG){
                 this.#utils.get("current").set("firstClick",true)
@@ -5888,6 +5969,7 @@ class HjsGrid {
             
             this.#calcBodySelect(true);
         }
+        this.#utils.get("select").set("rowspanSet", new Set())
     }
 
     #gridElementTouchStart = (e, parent) => {
