@@ -1962,6 +1962,7 @@ class HjsGrid {
         for(let colIdx=START_INDEX;colIdx<END_INDEX;colIdx++){
             if(this.#columns[colIdx].hidden === true  || this.#columns[colIdx].fixed === true) continue;
             const NEW_CELL = this.#createCell(rowIdx,colIdx);
+
             if(!displayedColumnIdx.get(colIdx)){
                 if(!this.#isUN(NEW_CELL)){
                     if(displayedColumnIdx.size === 0){
@@ -2025,6 +2026,7 @@ class HjsGrid {
 
         let colName = this.getColumnNameByIndex(colIdx)
         let rowspanInfo = this.#getrowspanInfo(rowIdx,colIdx)
+        let rowspanStartIdx = rowspanInfo[0]
         let rowspanNum = rowspanInfo[1];
         let rowspanYn = false
         
@@ -2038,7 +2040,12 @@ class HjsGrid {
                 if(rowIdx === START_INDEX) deleteYn = false;
                 
                 if(!deleteYn){
-                    if(rowspanInfo[0] === rowIdx && rowspanNum > 1) rowspanYn = true;
+                    if((rowspanInfo[0] === rowIdx || rowIdx === START_INDEX) && rowspanNum > 1){
+                        rowspanYn = true;
+                        if(rowIdx === START_INDEX){
+                            rowspanNum += (rowspanStartIdx - rowIdx);
+                        }
+                    }
                 }else return;
             }
         }
@@ -2052,7 +2059,8 @@ class HjsGrid {
         
         if(rowspanYn) tdEl.setAttribute("rowspan",rowspanNum);
 
-        if(rowIdx%2 === 0) tdEl.classList.add("even-cell")
+        let stdRowIdx = rowspanYn?rowspanStartIdx:rowIdx
+        if(stdRowIdx%2 === 0) tdEl.classList.add("even-cell")
         else tdEl.classList.add("odd-cell")
         
         let divEl = document.createElement("div");
@@ -2574,20 +2582,20 @@ class HjsGrid {
                 tempNum = colIdx;
             }
         }
-
+       
         tempSiArray.forEach(si=>selectInfoArray.push(si))
         if(this.#isUN(tempNum)) selectInfoArray.push(selectInfo)
         else{
-            selectInfoArray.push({
-                deleteYn : selectInfo?.deleteYn
-                , startRowIndex : selectInfo.startRowIndex
-                , endRowIndex : selectInfo.endRowIndex
-                , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),selectInfo.endColIndex)
-                , endColIndex : selectInfo.endColIndex
-            })
+            if(tempNum !== selectInfo.endColIndex){
+                selectInfoArray.push({
+                    deleteYn : selectInfo?.deleteYn
+                    , startRowIndex : selectInfo.startRowIndex
+                    , endRowIndex : selectInfo.endRowIndex
+                    , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),selectInfo.endColIndex)
+                    , endColIndex : selectInfo.endColIndex
+                })
+            } 
         }
-
-        console.log(selectInfoArray,tempSiArray)
         
         for(let sIdx=0;sIdx<selectInfoArray.length;sIdx++){
             let sInfo = selectInfoArray[sIdx];
