@@ -2510,11 +2510,15 @@ class HjsGrid {
         }
 
         const selectInfoArray = new Array();
-        selectInfoArray.push(selectInfo)
+
+        let tempNum;
+        const tempSiArray = new Array();
 
         const rowspanSet = new Set();
 
-        for(let colIdx=selectInfo.startColIndex;colIdx<=selectInfo.endRowIndex;colIdx++){
+        for(let colIdx=selectInfo.startColIndex;colIdx<=selectInfo.endColIndex;colIdx++){
+            if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+
             let rowspanYn = this.#columns[colIdx].rowspan === true
             
             if(rowspanYn){
@@ -2523,37 +2527,62 @@ class HjsGrid {
 
                     let rowspanInfoStr = `${rowspanInfo[0]}|${Math.max(rowspanInfo[0] + rowspanInfo[1] - 1,rowspanInfo[0])}|${colIdx}`
                     
-                    if(rowspanInfo[1] > 1 && !rowspanSet.has(rowspanInfoStr)){
-                        if(rowspanInfo[0] < selectInfo.startRowIndex){
-                            selectInfoArray.push({
-                                deleteYn : selectInfo?.deleteYn
-                                , startRowIndex : rowspanInfo[0]
-                                , endRowIndex : Math.max(rowspanInfo[0],selectInfo.startRowIndex-1)
-                                , startColIndex : colIdx
-                                , endColIndex : colIdx
-                            })
-                        }
-                        if(rowspanInfo[0]+rowspanInfo[1]-1 > selectInfo.endRowIndex){
-                            selectInfoArray.push({
-                                deleteYn : selectInfo?.deleteYn
-                                , startRowIndex : Math.min(rowspanInfo[0]+rowspanInfo[1]-1, selectInfo.endRowIndex+1)
-                                , endRowIndex : rowspanInfo[0]+rowspanInfo[1]-1
-                                , startColIndex : colIdx
-                                , endColIndex : colIdx
-                            })
-                        }
-                        console.log("--------------------------------------",rowspanInfo)
+                    if(!rowspanSet.has(rowspanInfoStr)){
+                        selectInfoArray.push({
+                            deleteYn : selectInfo?.deleteYn
+                            , startRowIndex : rowspanInfo[0]
+                            , endRowIndex : Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1)
+                            , startColIndex : colIdx
+                            , endColIndex : colIdx
+                        })
                         
                         rowspanSet.add(rowspanInfoStr)
                     }
-                    
                 }
+
+                console.log(tempNum, colIdx);
+
+                if(!this.#isUN(tempNum)) {
+                    
+                    if(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum) <= colIdx){
+                        tempSiArray.push({
+                            deleteYn : selectInfo?.deleteYn
+                            , startRowIndex : selectInfo.startRowIndex
+                            , endRowIndex : selectInfo.endRowIndex
+                            , startColIndex : Math.min(Math.max(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),selectInfo.startColIndex),selectInfo.endColIndex)
+                            , endColIndex : Math.max(Math.min(this.#columnsOption.get("visiblePrevColumnIndex").get(colIdx),selectInfo.endColIndex),selectInfo.startColIndex)
+                        })
+                    }
+                }else{
+                    tempSiArray.push({
+                        deleteYn : selectInfo?.deleteYn
+                        , startRowIndex : selectInfo.startRowIndex
+                        , endRowIndex : selectInfo.endRowIndex
+                        , startColIndex : selectInfo.startColIndex
+                        , endColIndex : Math.max(Math.min(this.#columnsOption.get("visiblePrevColumnIndex").get(colIdx),selectInfo.endColIndex),selectInfo.startColIndex)
+                    })
+                }
+
+                selectInfo = {
+                    deleteYn : selectInfo?.deleteYn
+                    , startRowIndex : selectInfo.startRowIndex
+                    , endRowIndex : selectInfo.endRowIndex
+                    , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(colIdx),selectInfo.endColIndex)
+                    , endColIndex : selectInfo.endColIndexs
+                }
+
+                tempNum = colIdx;
             }
         }
+
+        tempSiArray.forEach(si=>selectInfoArray.push(si))
+        if(this.#isUN(tempNum)) selectInfoArray.push(selectInfo)
+
+        console.log(selectInfoArray,tempSiArray)
         
         for(let sIdx=0;sIdx<selectInfoArray.length;sIdx++){
             let sInfo = selectInfoArray[sIdx];
-            console.log(selectInfoArray)
+            
             let orgSelectArray = this.#deepCopy(newSelectArray);
             let tempSelectArray = new Array();
             for(let idx=0;idx<orgSelectArray.length;idx++){
@@ -2885,7 +2914,7 @@ class HjsGrid {
                     }
                 }
             }
-            console.log(tempSelectArray)
+
             newSelectArray = this.#deepCopy(tempSelectArray);
         }
         
