@@ -2540,8 +2540,6 @@ class HjsGrid {
                     }
                 }
 
-                console.log(tempNum, colIdx);
-
                 if(!this.#isUN(tempNum)) {
                     
                     if(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum) <= colIdx){
@@ -2554,13 +2552,15 @@ class HjsGrid {
                         })
                     }
                 }else{
-                    tempSiArray.push({
-                        deleteYn : selectInfo?.deleteYn
-                        , startRowIndex : selectInfo.startRowIndex
-                        , endRowIndex : selectInfo.endRowIndex
-                        , startColIndex : selectInfo.startColIndex
-                        , endColIndex : Math.max(Math.min(this.#columnsOption.get("visiblePrevColumnIndex").get(colIdx),selectInfo.endColIndex),selectInfo.startColIndex)
-                    })
+                    if(colIdx !== selectInfo.startColIndex){
+                        tempSiArray.push({
+                            deleteYn : selectInfo?.deleteYn
+                            , startRowIndex : selectInfo.startRowIndex
+                            , endRowIndex : selectInfo.endRowIndex
+                            , startColIndex : selectInfo.startColIndex
+                            , endColIndex : Math.max(Math.min(this.#columnsOption.get("visiblePrevColumnIndex").get(colIdx)??selectInfo.startColIndex,selectInfo.endColIndex),selectInfo.startColIndex)
+                        })
+                    }
                 }
 
                 selectInfo = {
@@ -2568,7 +2568,7 @@ class HjsGrid {
                     , startRowIndex : selectInfo.startRowIndex
                     , endRowIndex : selectInfo.endRowIndex
                     , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(colIdx),selectInfo.endColIndex)
-                    , endColIndex : selectInfo.endColIndexs
+                    , endColIndex : selectInfo.endColIndex
                 }
 
                 tempNum = colIdx;
@@ -2577,6 +2577,15 @@ class HjsGrid {
 
         tempSiArray.forEach(si=>selectInfoArray.push(si))
         if(this.#isUN(tempNum)) selectInfoArray.push(selectInfo)
+        else{
+            selectInfoArray.push({
+                deleteYn : selectInfo?.deleteYn
+                , startRowIndex : selectInfo.startRowIndex
+                , endRowIndex : selectInfo.endRowIndex
+                , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),selectInfo.endColIndex)
+                , endColIndex : selectInfo.endColIndex
+            })
+        }
 
         console.log(selectInfoArray,tempSiArray)
         
