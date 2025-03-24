@@ -2582,17 +2582,19 @@ class HjsGrid {
                 tempNum = colIdx;
             }
         }
-
+       
         tempSiArray.forEach(si=>selectInfoArray.push(si))
         if(this.#isUN(tempNum)) selectInfoArray.push(selectInfo)
         else{
-            selectInfoArray.push({
-                deleteYn : selectInfo?.deleteYn
-                , startRowIndex : selectInfo.startRowIndex
-                , endRowIndex : selectInfo.endRowIndex
-                , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),selectInfo.endColIndex)
-                , endColIndex : selectInfo.endColIndex
-            })
+            if(tempNum !== selectInfo.endColIndex){
+                selectInfoArray.push({
+                    deleteYn : selectInfo?.deleteYn
+                    , startRowIndex : selectInfo.startRowIndex
+                    , endRowIndex : selectInfo.endRowIndex
+                    , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),selectInfo.endColIndex)
+                    , endColIndex : selectInfo.endColIndex
+                })
+            } 
         }
         
         for(let sIdx=0;sIdx<selectInfoArray.length;sIdx++){
