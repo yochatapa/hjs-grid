@@ -3150,8 +3150,10 @@ class HjsGrid {
 
                 let rowspanYn = this.#columns[curInfo.colIdx].rowspan === true
                 let rowspanInfo = this.#getrowspanInfo(curInfo.rowIdx,curInfo.colIdx);
-                let top = ((curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1)) + (rowspanYn?rowspanInfo[0]-curInfo.rowIdx:0))*this.#cell.get("height");
-                let height = rowspanYn?this.#cell.get("height") * rowspanInfo[1]:this.#cell.get("height");
+                let top = (curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1)) * this.#cell.get("height");
+                let height = this.#cell.get("height");
+                // let top = ((curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1)) + (rowspanYn?rowspanInfo[0]-curInfo.rowIdx:0))*this.#cell.get("height");
+                // let height = rowspanYn?this.#cell.get("height") * rowspanInfo[1]:this.#cell.get("height");
                 
                 if((top+height<=EL_HEIGHT && !rowspanYn) || (rowspanYn)){
                     curDivEl.style.top = top + "px"
@@ -5409,6 +5411,16 @@ class HjsGrid {
                 colIdx : colIdx,
             });
 
+            this.#utils.get("select").set("bodySelectStartRowspanInfo",{
+                rowspanSet : new Set()
+                , startRowIndex : rowIdx
+                , endRowIndex : rowIdx
+                , startColIndex : colIdx
+                , endRowIndex : colIdx
+                , orgRowIdx : rowIdx
+                , orgColIdx : colIdx
+            });
+
             if(RIGHT_FLAG){
                 // right click
                 e.preventDefault();
@@ -5992,8 +6004,39 @@ class HjsGrid {
             let selectJson = this.#utils.get("select").get("bodySelectInfo");
             let startJson = this.#utils.get("select").get("bodySelectStartInfo")
 
-            selectJson.startRowIndex = Math.min(startJson.rowIdx,rowIdx);
-            selectJson.endRowIndex = Math.max(startJson.rowIdx,rowIdx);
+            let rowspanYn = this.#columns[colIdx].rowspan === true
+            let rowspanInfo = this.#getrowspanInfo(rowIdx,colIdx);
+
+            let selectRowspanInfo = this.#utils.get("select").get("bodySelectStartRowspanInfo");
+            let ssRow = startJson.rowIdx;
+            let seRow = startJson.rowIdx;
+
+            let tsRow = rowIdx;
+            let teRow = rowIdx;
+
+            if(rowspanYn){
+                selectRowspanInfo.rowspanSet.add(colIdx)
+            }
+
+            for(let idx of selectRowspanInfo.rowspanSet){
+                console.log(Math.min(startJson.colIdx,colIdx) ,idx,Math.max(startJson.colIdx,colIdx) )
+                if(idx < Math.min(startJson.colIdx,colIdx) 
+                    || idx>Math.max(startJson.colIdx,colIdx)
+                ) selectRowspanInfo.rowspanSet.delete(idx)
+                else{
+                    let startRowspanInfo = this.#getrowspanInfo(startJson.rowIdx,idx);
+                    console.log(rowspanInfo)
+                    ssRow = Math.min(ssRow,startRowspanInfo[0])
+                    seRow = Math.max(seRow,startRowspanInfo[0],startRowspanInfo[0]+startRowspanInfo[1]-1)
+
+                    let targetRowspanInfo = this.#getrowspanInfo(rowIdx,idx);
+                    tsRow = Math.min(tsRow,targetRowspanInfo[0])
+                    teRow = Math.max(teRow,targetRowspanInfo[0],targetRowspanInfo[0]+targetRowspanInfo[1]-1)
+                }                    
+            }
+
+            selectJson.startRowIndex = Math.min(ssRow,tsRow);
+            selectJson.endRowIndex = Math.max(seRow,teRow);
             selectJson.startColIndex = Math.min(startJson.colIdx,colIdx);
             selectJson.endColIndex = Math.max(startJson.colIdx,colIdx);
 
