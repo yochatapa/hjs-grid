@@ -2494,15 +2494,98 @@ class HjsGrid {
                 }
             }
         }
-        
+
         if(selectInfo?.deleteYn === false) newSelectArray.push(selectInfo)
+
+        let newLeftSelectArray = new Array();
+
+        const rowspanSet = new Set();
+        
+        for(let idx=0;idx<newSelectArray.length;idx++){
+            let sa = newSelectArray[idx];
+            let tempNum;
+            for(let colIdx=sa.startColIndex;colIdx<=sa.endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+
+                let rowspanYn = this.#columns[colIdx]?.rowspan === true
+
+                if(rowspanYn){
+                    for(let rowIdx=sa.startRowIndex;rowIdx<=sa.endRowIndex;rowIdx++){
+                        let rowspanInfo = this.#getRowspanInfo(rowIdx,colIdx);
+                        
+                        let rowspanInfoStr = `${rowspanInfo[0]}|${Math.max(rowspanInfo[0] + rowspanInfo[1] - 1,rowspanInfo[0])}|${colIdx}`
+
+                        if(!rowspanSet.has(rowspanInfoStr)){
+                            newLeftSelectArray.push({
+                                deleteYn : sa.deleteYn
+                                , startRowIndex : rowspanInfo[0]
+                                , endRowIndex : Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1)
+                                , startColIndex : colIdx
+                                , endColIndex : colIdx
+                            })
+
+                            rowspanSet.add(rowspanInfoStr)  
+                        }
+                    }
+
+                    if(this.#isUN(tempNum)){
+                        if(sa.startColIndex < this.#columnsOption.get("visiblePrevColumnIndex").get(colIdx))
+                            newLeftSelectArray.push({
+                                deleteYn : sa.deleteYn
+                                , startRowIndex : sa.startRowIndex
+                                , endRowIndex : sa.endRowIndex
+                                , startColIndex : sa.startColIndex
+                                , endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(colIdx)
+                            })
+                        sa = {
+                            deleteYn : sa.deleteYn
+                            , startRowIndex : sa.startRowIndex
+                            , endRowIndex : sa.endRowIndex
+                            , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(colIdx),sa.endColIndex)
+                            , endColIndex : sa.endColIndex
+                        }
+                    }else{
+                        if(tempNum < this.#columnsOption.get("visiblePrevColumnIndex").get(colIdx))
+                            newLeftSelectArray.push({
+                                deleteYn : sa.deleteYn
+                                , startRowIndex : sa.startRowIndex
+                                , endRowIndex : sa.endRowIndex
+                                , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),sa.endColIndex)
+                                , endColIndex : this.#columnsOption.get("visiblePrevColumnIndex").get(colIdx)
+                            })
+                        sa = {
+                            deleteYn : sa.deleteYn
+                            , startRowIndex : sa.startRowIndex
+                            , endRowIndex : sa.endRowIndex
+                            , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),sa.endColIndex)
+                            , endColIndex : sa.endColIndex
+                        }
+                    }
+
+                    tempNum = colIdx;
+                }   
+            }
+
+            if(this.#isUN(tempNum)) newLeftSelectArray.push(sa)
+            else{
+                if(tempNum !== sa.endColIndex){
+                    newLeftSelectArray.push({
+                        deleteYn : sa?.deleteYn
+                        , startRowIndex : sa.startRowIndex
+                        , endRowIndex : sa.endRowIndex
+                        , startColIndex : Math.min(this.#columnsOption.get("visibleNextColumnIndex").get(tempNum),sa.endColIndex)
+                        , endColIndex : sa.endColIndex
+                    })
+                } 
+            }
+        }
     
         this.#renderLeftBodySelect(newSelectArray);
-        this.#renderBodySelect(newSelectArray)
+        this.#renderBodySelect(newLeftSelectArray)
     
         if(setYn === true){
             this.#utils.get("select").set("leftBodySelectArray",newSelectArray);
-            this.#utils.get("select").set("bodySelectArray",newSelectArray);                  
+            this.#utils.get("select").set("bodySelectArray",newLeftSelectArray);                  
         }
     }
 
@@ -4677,7 +4760,7 @@ class HjsGrid {
                     let checkY = checkInfo.top;
                     let checkWidth = checkInfo.width;
                     let checkHeight = checkInfo.height;
-                    console.log(e.touches[0])
+                    
                     if(checkX-radiusX<=clickX && clickX <= checkX+radiusX+checkWidth && checkY-radiusY <= clickY && clickY <= checkY + + radiusY + checkHeight){
                         let checked = this.el.get("checkbox").get(rowIdx).checked;
                         this.el.get("checkbox").get(rowIdx).checked = !checked
