@@ -2522,7 +2522,7 @@ class HjsGrid {
         let tempNum;
         const tempSiArray = new Array();
 
-        const rowspanSet = new Set();
+        /*const rowspanSet = new Set();
 
         for(let colIdx=selectInfo.startColIndex;colIdx<=selectInfo.endColIndex;colIdx++){
             if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
@@ -2595,7 +2595,9 @@ class HjsGrid {
                     , endColIndex : selectInfo.endColIndex
                 })
             } 
-        }
+        }*/
+
+        selectInfoArray.push(selectInfo);
         
         for(let sIdx=0;sIdx<selectInfoArray.length;sIdx++){
             let sInfo = selectInfoArray[sIdx];
@@ -5988,6 +5990,7 @@ class HjsGrid {
                 e.preventDefault();
                 e.stopPropagation();
             }
+
             let bodyEl = this.el.get("middleBody");
             let clientX = Math.round((e.type==="touchmove"?e.touches[0].clientX:e.clientX)-bodyEl.getBoundingClientRect().x+1);
             let clientY = Math.round((e.type==="touchmove"?e.touches[0].clientY:e.clientY)-bodyEl.getBoundingClientRect().y);
@@ -6019,13 +6022,12 @@ class HjsGrid {
             }
 
             for(let idx of selectRowspanInfo.rowspanSet){
-                console.log(Math.min(startJson.colIdx,colIdx) ,idx,Math.max(startJson.colIdx,colIdx) )
                 if(idx < Math.min(startJson.colIdx,colIdx) 
                     || idx>Math.max(startJson.colIdx,colIdx)
                 ) selectRowspanInfo.rowspanSet.delete(idx)
                 else{
                     let startRowspanInfo = this.#getrowspanInfo(startJson.rowIdx,idx);
-                    console.log(rowspanInfo)
+                    
                     ssRow = Math.min(ssRow,startRowspanInfo[0])
                     seRow = Math.max(seRow,startRowspanInfo[0],startRowspanInfo[0]+startRowspanInfo[1]-1)
 
