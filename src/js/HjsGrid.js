@@ -3937,7 +3937,7 @@ class HjsGrid {
             if(showOrgData?.[rowIdx]?.["IUDFLAG"] === "I" || showOrgData?.[rowIdx]?.["IUDFLAG"] === "D") orgSameYn = false;
             else{
                 for(let [fKey,fValue] of Object.entries(orgData[orgDataRow])){
-                    if(typeof fValue === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+                    if(typeof fValue === "number" && this.#isNumber(value)) value = Number(value)
                     if((fKey===colName && fValue !== value) || (fKey!==colName && fValue !== showOrgData?.[rowIdx]?.[fKey])){
                         orgSameYn = false;
                         break;
@@ -3947,7 +3947,7 @@ class HjsGrid {
         }
         
         if(!this.#isUN(showOrgData?.[rowIdx]?.[colName])){
-            if(typeof showOrgData[rowIdx][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+            if(/*typeof showOrgData[rowIdx][colName] === "number" && */this.#isNumber(value)) value = Number(value)
             let showOrgIUDFLAG = showOrgData?.[rowIdx]?.["IUDFLAG"] ;
             if(showOrgIUDFLAG !== "I" && showOrgIUDFLAG !== "D" && showOrgData[rowIdx][colName] !== value) showOrgData[rowIdx]["IUDFLAG"] = orgSameYn?"":"U"
             showOrgData[rowIdx][colName] = value;
@@ -3955,14 +3955,14 @@ class HjsGrid {
         }
         
         if(!this.#isUN(showData?.[showDataRow]?.[colName])){
-            if(typeof showData[showDataRow][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+            if(/*typeof showData[showDataRow][colName] === "number" && */this.#isNumber(value)) value = Number(value)
             if(showData?.[rowIdx]?.["IUDFLAG"] !== "I" && showData?.[showDataRow]?.["IUDFLAG"] !== "D" && showData[showDataRow][colName] !== value) showData[showDataRow]["IUDFLAG"] = orgSameYn?"":"U"
             showData[showDataRow][colName] = value;
             this.#data.set("showData",showData)
         }
         
         if(!this.#isUN(fullData?.[fullDataRow]?.[colName])){
-            if(typeof fullData[fullDataRow][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+            if(/*typeof fullData[fullDataRow][colName] === "number" && */this.#isNumber(value)) value = Number(value)
             if(fullData?.[rowIdx]?.["IUDFLAG"] !== "I" && fullData?.[fullDataRow]?.["IUDFLAG"] !== "D" && fullData[fullDataRow][colName] !== value) fullData[fullDataRow]["IUDFLAG"] = orgSameYn?"":"U"
             fullData[fullDataRow][colName] = value;
             this.#data.set("fullData",fullData)
@@ -4175,7 +4175,7 @@ class HjsGrid {
 
             for(let idx=0;idx<this.#columns.length;idx++){
                 const COL_INFO = this.#columns[idx];
-                insertData[COL_INFO.name] = "";
+                insertData[COL_INFO.name] = COL_INFO.type==="number"?0:"";
             }
 
             insertData["IUDFLAG"] = "I";
@@ -9647,6 +9647,10 @@ class HjsGrid {
         return value === undefined || value === null
     }
 
+    #isNumber = value => {
+        return (!isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false)
+    }
+
     #pasteText = (rowIdx,colIdx) => {
         const textArea = document.createElement('textarea');
         document.body.appendChild(textArea);
@@ -9738,10 +9742,11 @@ class HjsGrid {
             let orgJson = {};
 
             for(let [key,value] of Object.entries(data[idx])){
-                fullJson[key] = value;
-                showJson[key] = value;
-                showOrgJson[key] = value;
-                orgJson[key] = value;
+                let isNumber = this.#isNumber(value)
+                fullJson[key] = isNumber?Number(value):value;
+                showJson[key] = isNumber?Number(value):value;
+                showOrgJson[key] = isNumber?Number(value):value;
+                orgJson[key] = isNumber?Number(value):value;
             }
 
             fullData.push(fullJson);
@@ -9760,7 +9765,8 @@ class HjsGrid {
             let json = {};
 
             for(let [key,value] of Object.entries(data[idx])){
-                json[key] = value;
+                let isNumber = this.#isNumber(value)
+                json[key] = isNumber?Number(value):value;
             }
 
             array.push(json);
