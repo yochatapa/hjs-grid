@@ -8636,12 +8636,15 @@ class HjsGrid {
 
         const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
 
+        let rowspanYn = this.#getRowspanYn(MIN_COLUMN_INDEX);
+        let rowspanInfo = this.#getRowspanInfo(curInfo.rowIdx,MIN_COLUMN_INDEX);
+        
         this.#utils.get("select").set("bodySelectArray",[{
             deleteYn : false,
-            startRowIndex : curInfo.rowIdx,
-            endRowIndex : curInfo.rowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:curInfo.rowIdx,
+            endRowIndex : rowspanYn?rowspanInfo[2]:curInfo.rowIdx,
             startColIndex : MIN_COLUMN_INDEX,
-            endColIndex : MIN_COLUMN_INDEX,
+            endColIndex : MIN_COLUMN_INDEX
         }])
 
         this.#utils.get("select").set("bodySelectCurrentInfo",{
@@ -8695,13 +8698,16 @@ class HjsGrid {
         let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
 
         if(this.#isUN(sa) || this.#isUN(curInfo.rowIdx) || this.#isUN(curInfo.colIdx)) return;
+
+        let rowspanYn = this.#getRowspanYn(curInfo.colIdx);
+        let rowspanInfo = this.#getRowspanInfo(0,curInfo.colIdx);
         
         this.#utils.get("select").set("bodySelectArray",[{
             deleteYn : false,
-            startRowIndex : 0,
-            endRowIndex : 0,
+            startRowIndex : rowspanYn?rowspanInfo[0]:0,
+            endRowIndex : rowspanYn?rowspanInfo[2]:0,
             startColIndex : curInfo.colIdx,
-            endColIndex : curInfo.colIdx,
+            endColIndex : curInfo.colIdx
         }])
 
         this.#utils.get("select").set("bodySelectCurrentInfo",{
@@ -8755,12 +8761,15 @@ class HjsGrid {
 
         const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
 
+        let rowspanYn = this.#getRowspanYn(MAX_COLUMN_INDEX);
+        let rowspanInfo = this.#getRowspanInfo(curInfo.rowIdx,MAX_COLUMN_INDEX);
+        
         this.#utils.get("select").set("bodySelectArray",[{
             deleteYn : false,
-            startRowIndex : curInfo.rowIdx,
-            endRowIndex : curInfo.rowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:curInfo.rowIdx,
+            endRowIndex : rowspanYn?rowspanInfo[2]:curInfo.rowIdx,
             startColIndex : MAX_COLUMN_INDEX,
-            endColIndex : MAX_COLUMN_INDEX,
+            endColIndex : MAX_COLUMN_INDEX
         }])
 
         this.#utils.get("select").set("bodySelectCurrentInfo",{
@@ -8814,20 +8823,25 @@ class HjsGrid {
 
         if(this.#isUN(sa) || this.#isUN(curInfo.rowIdx) || this.#isUN(curInfo.colIdx)) return;
         
+        const MAX_ROW_INDEX = this.#data.get("showData").length-1
+
+        let rowspanYn = this.#getRowspanYn(curInfo.colIdx);
+        let rowspanInfo = this.#getRowspanInfo(MAX_ROW_INDEX,curInfo.colIdx);
+        
         this.#utils.get("select").set("bodySelectArray",[{
             deleteYn : false,
-            startRowIndex : this.#data.get("showData").length-1,
-            endRowIndex : this.#data.get("showData").length-1,
+            startRowIndex : rowspanYn?rowspanInfo[0]:MAX_ROW_INDEX,
+            endRowIndex : rowspanYn?rowspanInfo[2]:MAX_ROW_INDEX,
             startColIndex : curInfo.colIdx,
-            endColIndex : curInfo.colIdx,
+            endColIndex : curInfo.colIdx
         }])
 
         this.#utils.get("select").set("bodySelectCurrentInfo",{
-            rowIdx : this.#data.get("showData").length-1,
+            rowIdx : MAX_ROW_INDEX,
             colIdx : curInfo.colIdx
         })
 
-        this.goToRow(this.#data.get("showData").length-1)
+        this.goToRow(MAX_ROW_INDEX)
     }
 
     #arrowDownShiftKeyFunction = e => {
