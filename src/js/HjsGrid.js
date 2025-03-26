@@ -8225,6 +8225,7 @@ class HjsGrid {
     }
 
     #enterCtrlKeyFunction = (rowIdx,colIdx) => {
+        let editor = this.el.get("middleBodySelectCurrentEditor");
         this.#setCellValue(rowIdx,colIdx,editor.value)
         const CHANGE_VALUE = this.getCellValue(rowIdx,colIdx);
         
