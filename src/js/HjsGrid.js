@@ -4073,35 +4073,37 @@ class HjsGrid {
             this.#utils.get("scroll").set("passedRowCount",Math.max(passedRowCount-1,0));
 
         // select 초기화
-        let sa = this.#utils.get("select").get("bodySelectArray");
-        let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
-        let saFlag = false;
-        
-        for(let idx=sa.length-1;idx>=0;idx--){
-            let curFlag = false
-            if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
-            && curInfo.colIdx>=sa[idx].startColIndex && curInfo.colIdx<=sa[idx].endColIndex) curFlag = true;
+        if(renderYn){
+            let sa = this.#utils.get("select").get("bodySelectArray");
+            let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+            let saFlag = false;
             
-            if(sa[idx].startRowIndex >= SHOW_DATA_INDEX) sa[idx].startRowIndex--;
-            if(sa[idx].endRowIndex >= SHOW_DATA_INDEX) sa[idx].endRowIndex--;
-            
-            if(sa[idx].startRowIndex < 0 && sa[idx].endRowIndex < 0 || (sa[idx].startRowIndex === sa[idx].endRowIndex && sa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
-                sa.splice(idx,1)
-                if(curFlag) saFlag = true
-            }else{
-                sa[idx].startRowIndex = Math.max(Math.min(sa[idx].startRowIndex,this.#data.get("showData").length),0);
-                sa[idx].endRowIndex = Math.max(Math.min(sa[idx].endRowIndex,this.#data.get("showData").length),0);
+            for(let idx=sa.length-1;idx>=0;idx--){
+                let curFlag = false
+                if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
+                && curInfo.colIdx>=sa[idx].startColIndex && curInfo.colIdx<=sa[idx].endColIndex) curFlag = true;
+                
+                if(sa[idx].startRowIndex >= SHOW_DATA_INDEX) sa[idx].startRowIndex--;
+                if(sa[idx].endRowIndex >= SHOW_DATA_INDEX) sa[idx].endRowIndex--;
+                
+                if(sa[idx].startRowIndex < 0 && sa[idx].endRowIndex < 0 || (sa[idx].startRowIndex === sa[idx].endRowIndex && sa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
+                    sa.splice(idx,1)
+                    if(curFlag) saFlag = true
+                }else{
+                    sa[idx].startRowIndex = Math.max(Math.min(sa[idx].startRowIndex,this.#data.get("showData").length),0);
+                    sa[idx].endRowIndex = Math.max(Math.min(sa[idx].endRowIndex,this.#data.get("showData").length),0);
+                }
             }
-        }
-        
-        this.#utils.get("select").set("bodySelectArray",sa);
-        
-        if(curInfo?.rowIdx >= SHOW_DATA_INDEX){
-            curInfo.rowIdx--;
-            if(this.#data.get("showData").length === 0 || (saFlag && curInfo.rowIdx<0)) this.#utils.get("select").set("bodySelectCurrentInfo",null)
-            else{ 
-                curInfo.rowIdx = Math.max(Math.min(curInfo.rowIdx,this.#data.get("showData").length),0);
-                this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
+            
+            this.#utils.get("select").set("bodySelectArray",sa);
+            
+            if(curInfo?.rowIdx >= SHOW_DATA_INDEX){
+                curInfo.rowIdx--;
+                if(this.#data.get("showData").length === 0 || (saFlag && curInfo.rowIdx<0)) this.#utils.get("select").set("bodySelectCurrentInfo",null)
+                else{ 
+                    curInfo.rowIdx = Math.max(Math.min(curInfo.rowIdx,this.#data.get("showData").length),0);
+                    this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
+                }
             }
         }
 
