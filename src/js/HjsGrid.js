@@ -1915,11 +1915,6 @@ class HjsGrid {
         trEl.style.height = HEIGHT + "px";
         trEl.style.minHeight = HEIGHT + "px";
 
-        if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "I") trEl.classList.add("hjs-grid-insert-row");
-        if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "U") trEl.classList.add("hjs-grid-update-row");
-        if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "D") trEl.classList.add("hjs-grid-delete-row");
-        if(this.#utils.get("checkedRow").keys().toArray().includes(this.#getIdByShowDataIndex(rowIdx))) trEl.classList.add("hjs-grid-checked-row");
-
         this.#utils.get("scroll").get("displayedRow").set(rowIdx,trEl);
         this.#utils.get("scroll").get("displayedColumn").set(rowIdx,new Map());
 
@@ -2056,6 +2051,24 @@ class HjsGrid {
         tdEl.classList.add("hjs-grid-middle-body-table-tbody-tr-td")
         tdEl.style.minWidth = columnInfo.width + "px";
         tdEl.style.maxWidth = columnInfo.width + "px";
+
+        let insertFlag = false
+        let updateFlag = false
+        let deleteFlag = false
+        let checkboxFlag = false
+
+        if(rowspanYn){
+            for(let idx=rowspanInfo[0];idx<=rowspanInfo[2];idx++){
+                if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(idx))) === "I") insertFlag = true;
+                if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(idx))) === "U") updateFlag = true;
+                if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(idx))) === "D") deleteFlag = true;
+                if(this.#utils.get("checkedRow").keys().toArray().includes(this.#getIdByShowDataIndex(idx))) checkboxFlag = true;
+            }
+        }
+        if((rowspanYn && insertFlag) || (!rowspanYn && this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "I")) tdEl.classList.add("hjs-grid-insert-cell");
+        if((rowspanYn && updateFlag) || (!rowspanYn && this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "U")) tdEl.classList.add("hjs-grid-update-cell");
+        if((rowspanYn && deleteFlag) || (!rowspanYn && this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "D")) tdEl.classList.add("hjs-grid-delete-cell");
+        if((rowspanYn && checkboxFlag) || (!rowspanYn && this.#utils.get("checkedRow").keys().toArray().includes(this.#getIdByShowDataIndex(rowIdx)))) tdEl.classList.add("hjs-grid-checked-cell");
         
         if(rowspanYn) tdEl.setAttribute("rowspan",rowspanNum);
 
@@ -3702,7 +3715,7 @@ class HjsGrid {
             rowspanNum++;
         }
 
-        return [startIndex,rowspanNum];
+        return [startIndex,rowspanNum,Math.max(startIndex,startIndex+rowspanNum-1)];
     }
 
     #getRowspanYn = colIdx =>{
@@ -3924,7 +3937,7 @@ class HjsGrid {
             if(showOrgData?.[rowIdx]?.["IUDFLAG"] === "I" || showOrgData?.[rowIdx]?.["IUDFLAG"] === "D") orgSameYn = false;
             else{
                 for(let [fKey,fValue] of Object.entries(orgData[orgDataRow])){
-                    if(typeof fValue === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+                    if(typeof fValue === "number" && this.#isNumber(value)) value = Number(value)
                     if((fKey===colName && fValue !== value) || (fKey!==colName && fValue !== showOrgData?.[rowIdx]?.[fKey])){
                         orgSameYn = false;
                         break;
@@ -3934,7 +3947,7 @@ class HjsGrid {
         }
         
         if(!this.#isUN(showOrgData?.[rowIdx]?.[colName])){
-            if(typeof showOrgData[rowIdx][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+            if(/*typeof showOrgData[rowIdx][colName] === "number" && */this.#isNumber(value)) value = Number(value)
             let showOrgIUDFLAG = showOrgData?.[rowIdx]?.["IUDFLAG"] ;
             if(showOrgIUDFLAG !== "I" && showOrgIUDFLAG !== "D" && showOrgData[rowIdx][colName] !== value) showOrgData[rowIdx]["IUDFLAG"] = orgSameYn?"":"U"
             showOrgData[rowIdx][colName] = value;
@@ -3942,14 +3955,14 @@ class HjsGrid {
         }
         
         if(!this.#isUN(showData?.[showDataRow]?.[colName])){
-            if(typeof showData[showDataRow][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+            if(/*typeof showData[showDataRow][colName] === "number" && */this.#isNumber(value)) value = Number(value)
             if(showData?.[rowIdx]?.["IUDFLAG"] !== "I" && showData?.[showDataRow]?.["IUDFLAG"] !== "D" && showData[showDataRow][colName] !== value) showData[showDataRow]["IUDFLAG"] = orgSameYn?"":"U"
             showData[showDataRow][colName] = value;
             this.#data.set("showData",showData)
         }
         
         if(!this.#isUN(fullData?.[fullDataRow]?.[colName])){
-            if(typeof fullData[fullDataRow][colName] === "number" && !isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false) value = Number(value)
+            if(/*typeof fullData[fullDataRow][colName] === "number" && */this.#isNumber(value)) value = Number(value)
             if(fullData?.[rowIdx]?.["IUDFLAG"] !== "I" && fullData?.[fullDataRow]?.["IUDFLAG"] !== "D" && fullData[fullDataRow][colName] !== value) fullData[fullDataRow]["IUDFLAG"] = orgSameYn?"":"U"
             fullData[fullDataRow][colName] = value;
             this.#data.set("fullData",fullData)
@@ -4060,35 +4073,37 @@ class HjsGrid {
             this.#utils.get("scroll").set("passedRowCount",Math.max(passedRowCount-1,0));
 
         // select 초기화
-        let sa = this.#utils.get("select").get("bodySelectArray");
-        let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
-        let saFlag = false;
-        
-        for(let idx=sa.length-1;idx>=0;idx--){
-            let curFlag = false
-            if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
-            && curInfo.colIdx>=sa[idx].startColIndex && curInfo.colIdx<=sa[idx].endColIndex) curFlag = true;
+        if(renderYn){
+            let sa = this.#utils.get("select").get("bodySelectArray");
+            let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+            let saFlag = false;
             
-            if(sa[idx].startRowIndex >= SHOW_DATA_INDEX) sa[idx].startRowIndex--;
-            if(sa[idx].endRowIndex >= SHOW_DATA_INDEX) sa[idx].endRowIndex--;
-            
-            if(sa[idx].startRowIndex < 0 && sa[idx].endRowIndex < 0 || (sa[idx].startRowIndex === sa[idx].endRowIndex && sa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
-                sa.splice(idx,1)
-                if(curFlag) saFlag = true
-            }else{
-                sa[idx].startRowIndex = Math.max(Math.min(sa[idx].startRowIndex,this.#data.get("showData").length),0);
-                sa[idx].endRowIndex = Math.max(Math.min(sa[idx].endRowIndex,this.#data.get("showData").length),0);
+            for(let idx=sa.length-1;idx>=0;idx--){
+                let curFlag = false
+                if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
+                && curInfo.colIdx>=sa[idx].startColIndex && curInfo.colIdx<=sa[idx].endColIndex) curFlag = true;
+                
+                if(sa[idx].startRowIndex >= SHOW_DATA_INDEX) sa[idx].startRowIndex--;
+                if(sa[idx].endRowIndex >= SHOW_DATA_INDEX) sa[idx].endRowIndex--;
+                
+                if(sa[idx].startRowIndex < 0 && sa[idx].endRowIndex < 0 || (sa[idx].startRowIndex === sa[idx].endRowIndex && sa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
+                    sa.splice(idx,1)
+                    if(curFlag) saFlag = true
+                }else{
+                    sa[idx].startRowIndex = Math.max(Math.min(sa[idx].startRowIndex,this.#data.get("showData").length),0);
+                    sa[idx].endRowIndex = Math.max(Math.min(sa[idx].endRowIndex,this.#data.get("showData").length),0);
+                }
             }
-        }
-        
-        this.#utils.get("select").set("bodySelectArray",sa);
-        
-        if(curInfo?.rowIdx >= SHOW_DATA_INDEX){
-            curInfo.rowIdx--;
-            if(this.#data.get("showData").length === 0 || (saFlag && curInfo.rowIdx<0)) this.#utils.get("select").set("bodySelectCurrentInfo",null)
-            else{ 
-                curInfo.rowIdx = Math.max(Math.min(curInfo.rowIdx,this.#data.get("showData").length),0);
-                this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
+            
+            this.#utils.get("select").set("bodySelectArray",sa);
+            
+            if(curInfo?.rowIdx >= SHOW_DATA_INDEX){
+                curInfo.rowIdx--;
+                if(this.#data.get("showData").length === 0 || (saFlag && curInfo.rowIdx<0)) this.#utils.get("select").set("bodySelectCurrentInfo",null)
+                else{ 
+                    curInfo.rowIdx = Math.max(Math.min(curInfo.rowIdx,this.#data.get("showData").length),0);
+                    this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
+                }
             }
         }
 
@@ -4160,7 +4175,7 @@ class HjsGrid {
 
             for(let idx=0;idx<this.#columns.length;idx++){
                 const COL_INFO = this.#columns[idx];
-                insertData[COL_INFO.name] = "";
+                insertData[COL_INFO.name] = COL_INFO.type==="number"?0:"";
             }
 
             insertData["IUDFLAG"] = "I";
@@ -8049,13 +8064,16 @@ class HjsGrid {
             colIdx : nextColIdx
         });
 
+        let rowspanYn = this.#getRowspanYn(nextColIdx);
+        let rowspanInfo = this.#getRowspanInfo(nextRowIdx,nextColIdx);
+
         if(moveFlag) sa = [{
             deleteYn : false,
-            startRowIndex : nextRowIdx,
-            endRowIndex : nextRowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:nextRowIdx,
+            endRowIndex : rowspanYn?Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1):nextRowIdx,
             startColIndex : nextColIdx,
             endColIndex : nextColIdx
-        }]                
+        }]               
         
         // scroll 계산 처리
         const PASSED_ROW_COUNT = this.#utils.get("scroll").get("passedRowCount");
@@ -8184,13 +8202,16 @@ class HjsGrid {
             colIdx : nextColIdx
         });
 
+        let rowspanYn = this.#getRowspanYn(nextColIdx);
+        let rowspanInfo = this.#getRowspanInfo(nextRowIdx,nextColIdx);
+
         if(moveFlag) sa = [{
             deleteYn : false,
-            startRowIndex : nextRowIdx,
-            endRowIndex : nextRowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:nextRowIdx,
+            endRowIndex : rowspanYn?Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1):nextRowIdx,
             startColIndex : nextColIdx,
             endColIndex : nextColIdx
-        }]
+        }]    
         
         // scroll 계산 처리
         let PASSED_ROW_COUNT = this.#utils.get("scroll").get("passedRowCount");
@@ -8286,6 +8307,24 @@ class HjsGrid {
         let moveFlag = false
 
         let nextRowIdx,nextColIdx;
+
+        let curRowspanYn= this.#getRowspanYn(curInfo.colIdx);
+        
+        if(sa.length === 1 && curRowspanYn){
+            if(
+                (curInfo.rowIdx>=sa[0].startRowIndex && curInfo.rowIdx<=sa[0].endRowIndex
+                && curInfo.colIdx>=sa[0].startColIndex && curInfo.colIdx<=sa[0].endColIndex)
+                && (sa[0].startColIndex === sa[0].endColIndex)
+            ){
+                sa = [{
+                    deleteYn : false,
+                    startRowIndex : curInfo.rowIdx,
+                    endRowIndex : curInfo.rowIdx,
+                    startColIndex : curInfo.colIdx,
+                    endColIndex : curInfo.colIdx,
+                }]
+            }
+        }
 
         for(let idx=0;idx<sa.length;idx++){
             // 현재 cell이 포함될때
@@ -8425,6 +8464,24 @@ class HjsGrid {
 
         let nextRowIdx,nextColIdx;
 
+        let curRowspanYn= this.#getRowspanYn(curInfo.colIdx);
+
+        if(sa.length === 1 && curRowspanYn){
+            if(
+                (curInfo.rowIdx>=sa[0].startRowIndex && curInfo.rowIdx<=sa[0].endRowIndex
+                && curInfo.colIdx>=sa[0].startColIndex && curInfo.colIdx<=sa[0].endColIndex)
+                && (sa[0].startColIndex === sa[0].endColIndex)
+            ){
+                sa = [{
+                    deleteYn : false,
+                    startRowIndex : curInfo.rowIdx,
+                    endRowIndex : curInfo.rowIdx,
+                    startColIndex : curInfo.colIdx,
+                    endColIndex : curInfo.colIdx,
+                }]
+            }
+        }
+
         for(let idx=0;idx<sa.length;idx++){
             // 현재 cell이 포함될때
             if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
@@ -8506,10 +8563,13 @@ class HjsGrid {
             colIdx : nextColIdx
         });
 
+        let rowspanYn = this.#getRowspanYn(nextColIdx);
+        let rowspanInfo = this.#getRowspanInfo(nextRowIdx,nextColIdx);
+
         if(moveFlag) sa = [{
             deleteYn : false,
-            startRowIndex : nextRowIdx,
-            endRowIndex : nextRowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:nextRowIdx,
+            endRowIndex : rowspanYn?Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1):nextRowIdx,
             startColIndex : nextColIdx,
             endColIndex : nextColIdx
         }]
@@ -9474,7 +9534,6 @@ class HjsGrid {
     }
 
     getStatus = rowIdx => {
-        if(typeof colName === "number") colName = this.getColumnNameByIndex(colName)
         return this.#data.get("showOrgData")?.[rowIdx]?.["IUDFLAG"];
     }
     
@@ -9588,6 +9647,10 @@ class HjsGrid {
         return value === undefined || value === null
     }
 
+    #isNumber = value => {
+        return (!isNaN(value) && !this.#isUN(value) && value !== "" && value !== true && value !== false)
+    }
+
     #pasteText = (rowIdx,colIdx) => {
         const textArea = document.createElement('textarea');
         document.body.appendChild(textArea);
@@ -9679,10 +9742,11 @@ class HjsGrid {
             let orgJson = {};
 
             for(let [key,value] of Object.entries(data[idx])){
-                fullJson[key] = value;
-                showJson[key] = value;
-                showOrgJson[key] = value;
-                orgJson[key] = value;
+                let isNumber = this.#isNumber(value)
+                fullJson[key] = isNumber?Number(value):value;
+                showJson[key] = isNumber?Number(value):value;
+                showOrgJson[key] = isNumber?Number(value):value;
+                orgJson[key] = isNumber?Number(value):value;
             }
 
             fullData.push(fullJson);
@@ -9701,7 +9765,8 @@ class HjsGrid {
             let json = {};
 
             for(let [key,value] of Object.entries(data[idx])){
-                json[key] = value;
+                let isNumber = this.#isNumber(value)
+                json[key] = isNumber?Number(value):value;
             }
 
             array.push(json);

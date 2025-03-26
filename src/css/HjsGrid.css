@@ -968,6 +968,10 @@ span.hjs-grid-filter-button:after {
     color: blue !important;
 }
 
+.hjs-grid-checked-cell *{
+    color: blue !important;
+}
+
 .hjs-grid-insert-row>td{
     background-color: #bfd8ff !important;
 }
@@ -977,6 +981,18 @@ span.hjs-grid-filter-button:after {
 }
 
 .hjs-grid-delete-row>td{
+    background-color: #ffcece !important;
+}
+
+.hjs-grid-insert-cell{
+    background-color: #bfd8ff !important;
+}
+
+.hjs-grid-update-cell{
+    background-color: #bfffc1 !important;
+}
+
+.hjs-grid-delete-cell{
     background-color: #ffcece !important;
 }
 
