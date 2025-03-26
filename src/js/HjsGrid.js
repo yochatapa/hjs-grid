@@ -8225,6 +8225,7 @@ class HjsGrid {
     }
 
     #enterCtrlKeyFunction = (rowIdx,colIdx) => {
+        this.#setCellValue(rowIdx,colIdx,editor.value)
         const CHANGE_VALUE = this.getCellValue(rowIdx,colIdx);
         
         let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
@@ -8245,7 +8246,7 @@ class HjsGrid {
                     beforeArr[showOrgRowIdx][colName] = bValue;
                     if(this.#isUN(afterArr[showOrgRowIdx])) afterArr[showOrgRowIdx] = {};
                     afterArr[showOrgRowIdx][colName] = CHANGE_VALUE;
-
+                    console.log(showOrgRowIdx,colIdx,CHANGE_VALUE)
                     this.#setCellValue(showOrgRowIdx,colIdx,CHANGE_VALUE,false,false);
                 }
             }
