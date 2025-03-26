@@ -8287,6 +8287,24 @@ class HjsGrid {
 
         let nextRowIdx,nextColIdx;
 
+        let curRowspanYn= this.#getRowspanYn(curInfo.colIdx);
+        
+        if(sa.length === 1 && curRowspanYn){
+            if(
+                (curInfo.rowIdx>=sa[0].startRowIndex && curInfo.rowIdx<=sa[0].endRowIndex
+                && curInfo.colIdx>=sa[0].startColIndex && curInfo.colIdx<=sa[0].endColIndex)
+                && (sa[0].startColIndex === sa[0].endColIndex)
+            ){
+                sa = [{
+                    deleteYn : false,
+                    startRowIndex : curInfo.rowIdx,
+                    endRowIndex : curInfo.rowIdx,
+                    startColIndex : curInfo.colIdx,
+                    endColIndex : curInfo.colIdx,
+                }]
+            }
+        }
+
         for(let idx=0;idx<sa.length;idx++){
             // 현재 cell이 포함될때
             if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
@@ -8425,6 +8443,24 @@ class HjsGrid {
 
         let nextRowIdx,nextColIdx;
 
+        let curRowspanYn= this.#getRowspanYn(curInfo.colIdx);
+
+        if(sa.length === 1 && curRowspanYn){
+            if(
+                (curInfo.rowIdx>=sa[0].startRowIndex && curInfo.rowIdx<=sa[0].endRowIndex
+                && curInfo.colIdx>=sa[0].startColIndex && curInfo.colIdx<=sa[0].endColIndex)
+                && (sa[0].startColIndex === sa[0].endColIndex)
+            ){
+                sa = [{
+                    deleteYn : false,
+                    startRowIndex : curInfo.rowIdx,
+                    endRowIndex : curInfo.rowIdx,
+                    startColIndex : curInfo.colIdx,
+                    endColIndex : curInfo.colIdx,
+                }]
+            }
+        }
+
         for(let idx=0;idx<sa.length;idx++){
             // 현재 cell이 포함될때
             if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
@@ -8506,10 +8542,13 @@ class HjsGrid {
             colIdx : nextColIdx
         });
 
+        let rowspanYn = this.#getRowspanYn(nextColIdx);
+        let rowspanInfo = this.#getRowspanInfo(nextRowIdx,nextColIdx);
+
         if(moveFlag) sa = [{
             deleteYn : false,
-            startRowIndex : nextRowIdx,
-            endRowIndex : nextRowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:nextRowIdx,
+            endRowIndex : rowspanYn?Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1):nextRowIdx,
             startColIndex : nextColIdx,
             endColIndex : nextColIdx
         }]
