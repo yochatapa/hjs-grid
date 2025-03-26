@@ -2507,7 +2507,7 @@ class HjsGrid {
             for(let colIdx=sa.startColIndex;colIdx<=sa.endColIndex;colIdx++){
                 if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
 
-                let rowspanYn = this.#columns[colIdx]?.rowspan === true
+                let rowspanYn = this.#getRowspanYn(colIdx);
 
                 if(rowspanYn){
                     for(let rowIdx=sa.startRowIndex;rowIdx<=sa.endRowIndex;rowIdx++){
@@ -3234,7 +3234,7 @@ class HjsGrid {
                 curDivEl.classList.add("hjs-grid-selected-current-cell");
                 curDivEl.style.position = "absolute";
 
-                let rowspanYn = this.#columns[curInfo.colIdx].rowspan === true
+                let rowspanYn = this.#getRowspanYn(curInfo.colIdx);
                 let rowspanInfo = this.#getRowspanInfo(curInfo.rowIdx,curInfo.colIdx);
                 let top = (curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1)) * this.#cell.get("height");
                 let height = this.#cell.get("height");
@@ -3703,6 +3703,10 @@ class HjsGrid {
         }
 
         return [startIndex,rowspanNum];
+    }
+
+    #getRowspanYn = colIdx =>{
+        return this.#columns[colIdx]?.rowspan === true
     }
 
     #getFormulaValue = (rowIdx, colName) => {
@@ -5479,7 +5483,7 @@ class HjsGrid {
 
             if(!shiftFlag){
                 if(!rightClear){
-                    let rowspanYn = this.#columns[colIdx]?.rowspan === true
+                    let rowspanYn = this.#getRowspanYn(colIdx);
                     let rowspanInfo = this.#getRowspanInfo(rowIdx,colIdx);
 
                     this.#utils.get("select").set("bodySelectInfo",{
@@ -6094,7 +6098,7 @@ class HjsGrid {
             let selectJson = this.#utils.get("select").get("bodySelectInfo");
             let startJson = this.#utils.get("select").get("bodySelectStartInfo")
 
-            let rowspanYn = this.#columns[colIdx]?.rowspan === true
+            let rowspanYn = this.#getRowspanYn(colIdx)
             let rowspanInfo = this.#getRowspanInfo(rowIdx,colIdx);
 
             let selectRowspanInfo = this.#utils.get("select").get("bodySelectStartRowspanInfo");
@@ -7851,6 +7855,7 @@ class HjsGrid {
                 }else{
                     let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
                     this.#utils.get("select").set("leftBodySelectArray",new Array())
+
                     this.#utils.get("select").set("bodySelectArray",[{
                         deleteYn : false,
                         startRowIndex : curInfo.rowIdx,
@@ -8363,10 +8368,13 @@ class HjsGrid {
             colIdx : nextColIdx
         });
 
+        let rowspanYn = this.#getRowspanYn(nextColIdx);
+        let rowspanInfo = this.#getRowspanInfo(nextRowIdx,nextColIdx);
+
         if(moveFlag) sa = [{
             deleteYn : false,
-            startRowIndex : nextRowIdx,
-            endRowIndex : nextRowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:nextRowIdx,
+            endRowIndex : rowspanYn?Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1):nextRowIdx,
             startColIndex : nextColIdx,
             endColIndex : nextColIdx
         }]                
