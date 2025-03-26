@@ -1915,11 +1915,6 @@ class HjsGrid {
         trEl.style.height = HEIGHT + "px";
         trEl.style.minHeight = HEIGHT + "px";
 
-        if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "I") trEl.classList.add("hjs-grid-insert-row");
-        if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "U") trEl.classList.add("hjs-grid-update-row");
-        if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "D") trEl.classList.add("hjs-grid-delete-row");
-        if(this.#utils.get("checkedRow").keys().toArray().includes(this.#getIdByShowDataIndex(rowIdx))) trEl.classList.add("hjs-grid-checked-row");
-
         this.#utils.get("scroll").get("displayedRow").set(rowIdx,trEl);
         this.#utils.get("scroll").get("displayedColumn").set(rowIdx,new Map());
 
@@ -2056,6 +2051,24 @@ class HjsGrid {
         tdEl.classList.add("hjs-grid-middle-body-table-tbody-tr-td")
         tdEl.style.minWidth = columnInfo.width + "px";
         tdEl.style.maxWidth = columnInfo.width + "px";
+
+        let insertFlag = false
+        let updateFlag = false
+        let deleteFlag = false
+        let checkboxFlag = false
+
+        if(rowspanYn){
+            for(let idx=rowspanInfo[0];idx<=rowspanInfo[2];idx++){
+                if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(idx))) === "I") insertFlag = true;
+                if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(idx))) === "U") updateFlag = true;
+                if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(idx))) === "D") deleteFlag = true;
+                if(this.#utils.get("checkedRow").keys().toArray().includes(this.#getIdByShowDataIndex(idx))) checkboxFlag = true;
+            }
+        }
+        if((rowspanYn && insertFlag) || (!rowspanYn && this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "I")) tdEl.classList.add("hjs-grid-insert-cell");
+        if((rowspanYn && updateFlag) || (!rowspanYn && this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "U")) tdEl.classList.add("hjs-grid-update-cell");
+        if((rowspanYn && deleteFlag) || (!rowspanYn && this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "D")) tdEl.classList.add("hjs-grid-delete-cell");
+        if((rowspanYn && checkboxFlag) || (!rowspanYn && this.#utils.get("checkedRow").keys().toArray().includes(this.#getIdByShowDataIndex(rowIdx)))) tdEl.classList.add("hjs-grid-checked-cell");
         
         if(rowspanYn) tdEl.setAttribute("rowspan",rowspanNum);
 
@@ -3702,7 +3715,7 @@ class HjsGrid {
             rowspanNum++;
         }
 
-        return [startIndex,rowspanNum];
+        return [startIndex,rowspanNum,Math.max(startIndex,startIndex+rowspanNum-1)];
     }
 
     #getRowspanYn = colIdx =>{
@@ -8049,13 +8062,16 @@ class HjsGrid {
             colIdx : nextColIdx
         });
 
+        let rowspanYn = this.#getRowspanYn(nextColIdx);
+        let rowspanInfo = this.#getRowspanInfo(nextRowIdx,nextColIdx);
+
         if(moveFlag) sa = [{
             deleteYn : false,
-            startRowIndex : nextRowIdx,
-            endRowIndex : nextRowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:nextRowIdx,
+            endRowIndex : rowspanYn?Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1):nextRowIdx,
             startColIndex : nextColIdx,
             endColIndex : nextColIdx
-        }]                
+        }]               
         
         // scroll 계산 처리
         const PASSED_ROW_COUNT = this.#utils.get("scroll").get("passedRowCount");
@@ -8184,13 +8200,16 @@ class HjsGrid {
             colIdx : nextColIdx
         });
 
+        let rowspanYn = this.#getRowspanYn(nextColIdx);
+        let rowspanInfo = this.#getRowspanInfo(nextRowIdx,nextColIdx);
+
         if(moveFlag) sa = [{
             deleteYn : false,
-            startRowIndex : nextRowIdx,
-            endRowIndex : nextRowIdx,
+            startRowIndex : rowspanYn?rowspanInfo[0]:nextRowIdx,
+            endRowIndex : rowspanYn?Math.max(rowspanInfo[0],rowspanInfo[0]+rowspanInfo[1]-1):nextRowIdx,
             startColIndex : nextColIdx,
             endColIndex : nextColIdx
-        }]
+        }]    
         
         // scroll 계산 처리
         let PASSED_ROW_COUNT = this.#utils.get("scroll").get("passedRowCount");
@@ -9513,7 +9532,6 @@ class HjsGrid {
     }
 
     getStatus = rowIdx => {
-        if(typeof colName === "number") colName = this.getColumnNameByIndex(colName)
         return this.#data.get("showOrgData")?.[rowIdx]?.["IUDFLAG"];
     }
     
