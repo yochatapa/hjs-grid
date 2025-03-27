@@ -8622,6 +8622,49 @@ class HjsGrid {
         this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex = MIN_COLUMN_INDEX
         this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex = curInfo.colIdx
 
+        let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex;
+        let startFlag = true;
+
+        while(startFlag){
+            for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+    
+                let minRowspanYn = this.#getRowspanYn(colIdx);
+                let minRowspanInfo = this.#getRowspanInfo(startRowIndex,colIdx);
+    
+                if(minRowspanYn &&!this.#isUN(minRowspanInfo) && startRowIndex > minRowspanInfo[0]){
+                    startRowIndex = minRowspanInfo[0];
+                    break;
+                }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    startFlag = false;
+                }
+            }
+        }
+
+        this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = startRowIndex
+
+        let endRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex;
+
+        let endFlag = true;
+
+        while(endFlag){
+            for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+    
+                let maxRowspanYn = this.#getRowspanYn(colIdx);
+                let maxRowspanInfo = this.#getRowspanInfo(endRowIndex,colIdx);
+    
+                if(maxRowspanYn &&!this.#isUN(maxRowspanInfo) && endRowIndex < maxRowspanInfo[2]){
+                    endRowIndex = maxRowspanInfo[2];
+                    break;
+                }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    endFlag = false;
+                }
+            }
+        }
+
+        this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = endRowIndex
+        
         let selectInfo = this.#utils.get("select").get("bodySelectArray")[sa.index];
         selectInfo["deleteYn"] = false
 
@@ -8730,6 +8773,49 @@ class HjsGrid {
         this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = 0
         this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = curInfo.rowIdx;
 
+
+        let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex;
+        let startFlag = true;
+
+        while(startFlag){
+            for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+    
+                let minRowspanYn = this.#getRowspanYn(colIdx);
+                let minRowspanInfo = this.#getRowspanInfo(startRowIndex,colIdx);
+    
+                if(minRowspanYn &&!this.#isUN(minRowspanInfo) && startRowIndex > minRowspanInfo[0]){
+                    startRowIndex = minRowspanInfo[0];
+                    break;
+                }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    startFlag = false;
+                }
+            }
+        }
+
+        this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = startRowIndex
+
+        let endRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex;
+
+        let endFlag = true;
+
+        while(endFlag){
+            for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+    
+                let maxRowspanYn = this.#getRowspanYn(colIdx);
+                let maxRowspanInfo = this.#getRowspanInfo(endRowIndex,colIdx);
+    
+                if(maxRowspanYn &&!this.#isUN(maxRowspanInfo) && endRowIndex < maxRowspanInfo[2]){
+                    endRowIndex = maxRowspanInfo[2];
+                    break;
+                }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    endFlag = false;
+                }
+            }
+        }
+
+        this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = endRowIndex
         let selectInfo = this.#utils.get("select").get("bodySelectArray")[sa.index];
         selectInfo["deleteYn"] = false
 
@@ -8833,6 +8919,49 @@ class HjsGrid {
         this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex = curInfo.colIdx
         this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex = MAX_COLUMN_INDEX
         
+        let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex;
+        let startFlag = true;
+
+        while(startFlag){
+            for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+    
+                let minRowspanYn = this.#getRowspanYn(colIdx);
+                let minRowspanInfo = this.#getRowspanInfo(startRowIndex,colIdx);
+    
+                if(minRowspanYn &&!this.#isUN(minRowspanInfo) && startRowIndex > minRowspanInfo[0]){
+                    startRowIndex = minRowspanInfo[0];
+                    break;
+                }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    startFlag = false;
+                }
+            }
+        }
+
+        this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = startRowIndex
+
+        let endRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex;
+
+        let endFlag = true;
+
+        while(endFlag){
+            for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+    
+                let maxRowspanYn = this.#getRowspanYn(colIdx);
+                let maxRowspanInfo = this.#getRowspanInfo(endRowIndex,colIdx);
+    
+                if(maxRowspanYn &&!this.#isUN(maxRowspanInfo) && endRowIndex < maxRowspanInfo[2]){
+                    endRowIndex = maxRowspanInfo[2];
+                    break;
+                }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    endFlag = false;
+                }
+            }
+        }
+
+        this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = endRowIndex
+
         let selectInfo = this.#utils.get("select").get("bodySelectArray")[sa.index];
         selectInfo["deleteYn"] = false
 
@@ -8939,6 +9068,49 @@ class HjsGrid {
 
         this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = curInfo.rowIdx
         this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = this.#data.get("showData").length-1;
+
+let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex;
+        let startFlag = true;
+
+        while(startFlag){
+            for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+    
+                let minRowspanYn = this.#getRowspanYn(colIdx);
+                let minRowspanInfo = this.#getRowspanInfo(startRowIndex,colIdx);
+    
+                if(minRowspanYn &&!this.#isUN(minRowspanInfo) && startRowIndex > minRowspanInfo[0]){
+                    startRowIndex = minRowspanInfo[0];
+                    break;
+                }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    startFlag = false;
+                }
+            }
+        }
+
+        this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = startRowIndex
+
+        let endRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex;
+
+        let endFlag = true;
+
+        while(endFlag){
+            for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+    
+                let maxRowspanYn = this.#getRowspanYn(colIdx);
+                let maxRowspanInfo = this.#getRowspanInfo(endRowIndex,colIdx);
+    
+                if(maxRowspanYn &&!this.#isUN(maxRowspanInfo) && endRowIndex < maxRowspanInfo[2]){
+                    endRowIndex = maxRowspanInfo[2];
+                    break;
+                }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    endFlag = false;
+                }
+            }
+        }
+
+        this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = endRowIndex
 
         let selectInfo = this.#utils.get("select").get("bodySelectArray")[sa.index];
         selectInfo["deleteYn"] = false
