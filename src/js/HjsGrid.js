@@ -3700,17 +3700,21 @@ class HjsGrid {
             colIdx = this.getColumnIndexByName(colName)
         }
 
+        let rowspanYn = this.#getRowspanYn(colIdx);
+
+        if(!rowspanYn) return [rowIdx,0,rowIdx];
+
         let rowspanNum = 0;
 
         let startIndex = rowIdx;
 
         for(let idx=rowIdx-1;idx>=0;idx--){
-            if(this.#data.get("showData")[rowIdx][colName] !== this.#data.get("showData")[idx][colName]) break;
+            if(this.#data.get("showData")[rowIdx]?.[colName] !== this.#data.get("showData")[idx]?.[colName]) break;
             startIndex--;
         }
         
         for(let idx=startIndex;idx<this.#data.get("showData").length;idx++){
-            if(this.#data.get("showData")[rowIdx][colName] !== this.#data.get("showData")[idx][colName]) break;
+            if(this.#data.get("showData")[rowIdx]?.[colName] !== this.#data.get("showData")[idx]?.[colName]) break;
             rowspanNum++;
         }
 
@@ -8847,11 +8851,73 @@ class HjsGrid {
     
     #arrowUpShiftKeyFunction = e => {
         let sa = this.#getCurrentSelectedArea();
-        let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+        let cInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
 
-        if(this.#isUN(sa) || this.#isUN(curInfo.rowIdx) || this.#isUN(curInfo.colIdx)) return;
+        if(this.#isUN(sa) || this.#isUN(cInfo.rowIdx) || this.#isUN(cInfo.colIdx)) return;
 
-        let rowspanYn = this.#getRowspanYn(curInfo.colIdx);
+        let curInfo = {
+            startRowIndex : cInfo.rowIdx,
+            endRowIndex : cInfo.rowIdx,
+            startColIndex : cInfo.colIdx,
+            endColIndex : cInfo.colIdx
+        }
+
+        for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+            if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+            let curRowspanInfo = this.#getRowspanInfo(cInfo.rowIdx,colIdx);
+            
+            curInfo.startRowIndex = Math.min(curRowspanInfo[0],curInfo.startRowIndex);
+            curInfo.endRowIndex = Math.max(curRowspanInfo[2],curInfo.endRowIndex);
+        }
+        
+        /*if((rowspanYn && sa.startRowIndex < curInfo.startRowIndex)
+        || (!rowspanYn && (sa.endRowIndex === curInfo.rowIdx && curInfo.rowIdx !== sa.startRowIndex && !this.#isUN(sa.endRowIndex) & !this.#isUN(curInfo.rowIdx)))
+        )*/
+        
+        if(sa.endRowIndex > curInfo.endRowIndex){
+            console.log("end - 1")
+            let startRowIndex = this.#getRowspanInfo(this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex,cInfo.colIdx)[0]-1;
+            let startFlag = true;
+
+            while(startFlag){
+                for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                    if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+                    let startRowspanYn = this.#getRowspanYn(colIdx);
+                    let startRowspanInfo = this.#getRowspanInfo(startRowIndex,colIdx);
+                    console.log(startRowIndex,startRowspanInfo[2])
+                    if(startRowspanYn && startRowIndex > startRowspanInfo[2]){
+                        startRowIndex = startRowspanInfo[2]
+                        break;
+                    }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                        startFlag = false;
+                    }
+                }
+            }
+            this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = Math.max(startRowIndex,curInfo.startRowIndex)
+        }else{
+            console.log("start - 1")
+            let endRowIndex = this.#getRowspanInfo(this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex-1,cInfo.colIdx)[0];;
+            let endFlag = true;
+
+            while(endFlag){
+                for(let colIdx=this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex;colIdx<=this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex;colIdx++){
+                    if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
+                    let endRowspanYn = this.#getRowspanYn(colIdx);
+                    let endRowspanInfo = this.#getRowspanInfo(endRowIndex,colIdx);
+
+                    if(endRowspanYn && endRowIndex > endRowspanInfo[0]){
+                        endRowIndex = endRowspanInfo[0]
+                        break;
+                    }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                        endFlag = false;
+                    }
+                }
+            }
+
+            this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = Math.min(endRowIndex,curInfo.endRowIndex)
+        }
+
+        /*let rowspanYn = this.#getRowspanYn(curInfo.colIdx);
         let rowspanInfo = this.#getRowspanInfo(curInfo.rowIdx,curInfo.colIdx)
         
         if((rowspanYn && this.#isUN(rowspanInfo)) && sa.startRowIndex === curInfo.rowIdx && curInfo.rowIdx !== sa.endRowIndex && !this.#isUN(sa.startRowIndex) & !this.#isUN(curInfo.rowIdx)){
@@ -8904,6 +8970,7 @@ class HjsGrid {
         }
 
         this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = endRowIndex
+        */
 
         let selectInfo = this.#utils.get("select").get("bodySelectArray")[sa.index];
         selectInfo["deleteYn"] = false
@@ -9072,7 +9139,7 @@ class HjsGrid {
         this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = curInfo.rowIdx
         this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = this.#data.get("showData").length-1;
 
-let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex;
+        let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex;
         let startFlag = true;
 
         while(startFlag){
@@ -9174,6 +9241,7 @@ let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].s
         )*/
         
         if(sa.startRowIndex < curInfo.startRowIndex){
+            console.log("arrow down shift : start + 1")
             let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex;
             let startFlag = true;
 
@@ -9183,17 +9251,19 @@ let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].s
                     let startRowspanYn = this.#getRowspanYn(colIdx);
                     let startRowspanInfo = this.#getRowspanInfo(startRowIndex,colIdx);
         
-                    if(startRowspanYn && startRowIndex < startRowspanInfo[2]){
-                        startRowIndex = startRowspanInfo[2]
+                    if(startRowspanYn && startRowIndex > startRowspanInfo[0]){
+                        startRowIndex = startRowspanInfo[0]
                         break;
                     }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
                         startFlag = false;
                     }
                 }
 
-                this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = Math.min(startRowIndex + 1,curInfo.startRowIndex)
+                if(startRowIndex === this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex) this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex + 1
+                else this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex = Math.min(startRowIndex,curInfo.startRowIndex)
             }
         }else{
+            console.log("arrow down shift : end + 1")
             let endRowIndex = this.#getRowspanInfo(this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex,cInfo.colIdx)[2]+1;
             let endFlag = true;
 
@@ -9206,13 +9276,13 @@ let startRowIndex = this.#utils.get("select").get("bodySelectArray")[sa.index].s
                     if(endRowspanYn && endRowIndex < endRowspanInfo[2]){
                         endRowIndex = endRowspanInfo[2]
                         break;
-                    }else if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
+                    }
+                    if(colIdx === this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex){
                         endFlag = false;
                     }
                 }
-
-                this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = Math.max(endRowIndex,curInfo.endRowIndex)
             }
+            this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex = Math.max(endRowIndex,curInfo.endRowIndex)
         }
 
         /*if(sa.endRowIndex === curInfo.rowIdx && curInfo.rowIdx !== sa.startRowIndex && !this.#isUN(sa.endRowIndex) & !this.#isUN(curInfo.rowIdx)){
