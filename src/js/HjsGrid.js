@@ -8910,7 +8910,7 @@ class HjsGrid {
         || (!rowspanYn && (sa.endRowIndex === curInfo.rowIdx && curInfo.rowIdx !== sa.startRowIndex && !this.#isUN(sa.endRowIndex) & !this.#isUN(curInfo.rowIdx)))
         )*/
         
-        if(sa.endRowIndex > curInfo.endRowIndex){
+        if(sa.startRowIndex === curInfo.startRowIndex && sa.endRowIndex > curInfo.endRowIndex){
             console.log("arrow up shift : end - 1")
             let startRowIndex = this.#getRowspanInfo(this.#utils.get("select").get("bodySelectArray")[sa.index].endRowIndex,cInfo.colIdx)[0];
             let startFlag = true;
@@ -9303,8 +9303,8 @@ class HjsGrid {
         /*if((rowspanYn && sa.startRowIndex < curInfo.startRowIndex)
         || (!rowspanYn && (sa.endRowIndex === curInfo.rowIdx && curInfo.rowIdx !== sa.startRowIndex && !this.#isUN(sa.endRowIndex) & !this.#isUN(curInfo.rowIdx)))
         )*/
-        
-        if(sa.startRowIndex < curInfo.startRowIndex){
+        console.log(sa.startRowIndex, curInfo.endRowIndex)
+        if(sa.endRowIndex === curInfo.endRowIndex && sa.startRowIndex < curInfo.startRowIndex){
             console.log("arrow down shift : start + 1")
             let startRowIndex = this.#getRowspanInfo(this.#utils.get("select").get("bodySelectArray")[sa.index].startRowIndex,cInfo.colIdx)[2];
             let startFlag = true;
