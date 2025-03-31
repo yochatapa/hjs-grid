@@ -121,7 +121,7 @@
 
             for(let idx2=0;idx2<COL_COUNT;idx2++){
                 //tempData["COL_"+idx2] = idx + "/" + idx2;
-                tempData["COL_"+idx2] = Math.round((idx)/5)/* + " / " + idx2*/;
+                tempData["COL_"+idx2] = Math.round(Math.random()*10%3)/* + " / " + idx2*/;
             }
 
             
@@ -178,8 +178,12 @@
                 case 3 :
                     colJson["filter"] = true;
                     colJson["formula"] = `=CONCAT("~~~",COL_3)`;
+                    colJson["rowspan"] = true
                     break;
                 case 4 : 
+                    colJson["rowspan"] = true
+                    break;
+                case 6 : 
                     colJson["rowspan"] = true
                     break;
                 case 8 : 
@@ -224,6 +228,9 @@
                     //colJson["fixed"] = true
                     colJson["filter"] = true
                     colJson["type"] = "datetime"
+                    break;
+                case 99 :
+                    colJson["rowspan"] = true
                     break;
             }
 
