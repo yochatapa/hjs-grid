@@ -8747,7 +8747,7 @@ class HjsGrid {
         let prevSaEndCol = this.#columnsOption.get("visiblePrevColumnIndex").get(sa.endColIndex);
         let prevCurCol = this.#columnsOption.get("visiblePrevColumnIndex").get(curInfo.colIdx);
         
-        if(prevSaStartCol === prevCurCol && curInfo.colIdx !== sa.endColIndex && !this.#isUN(prevSaStartCol) & !this.#isUN(prevCurCol)){
+        if(prevSaStartCol === prevCurCol && curInfo.colIdx !== sa.endColIndex /*&& !this.#isUN(prevSaStartCol) & !this.#isUN(prevCurCol)*/){
             this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex = (prevSaEndCol??sa.endColIndex)
         }else{
             this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex = (prevSaStartCol??sa.startColIndex)
@@ -9146,7 +9146,7 @@ class HjsGrid {
         let nextSaEndCol = this.#columnsOption.get("visibleNextColumnIndex").get(sa.endColIndex);
         let nextCurCol = this.#columnsOption.get("visibleNextColumnIndex").get(curInfo.colIdx);
         
-        if(nextSaEndCol === nextCurCol && curInfo.colIdx !== sa.startColIndex && !this.#isUN(nextSaEndCol) & !this.#isUN(nextCurCol)){
+        if(nextSaEndCol === nextCurCol && curInfo.colIdx !== sa.startColIndex/* && !this.#isUN(nextSaEndCol) & !this.#isUN(nextCurCol)*/){
             this.#utils.get("select").get("bodySelectArray")[sa.index].startColIndex = (nextSaStartCol??sa.startColIndex)
         }else{
             this.#utils.get("select").get("bodySelectArray")[sa.index].endColIndex = (nextSaEndCol??sa.endColIndex)
