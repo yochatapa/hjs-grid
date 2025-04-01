@@ -7893,16 +7893,20 @@ class HjsGrid {
                 }else if(e.ctrlKey){
                     this.#arrowUpCtrlKeyFunction();
                 }else{
-                    this.#utils.get("select").set("leftBodySelectArray",new Array())
-                    let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
-                    this.#utils.get("select").set("bodySelectArray",[{
-                        deleteYn : false,
-                        startRowIndex : curInfo.rowIdx,
-                        endRowIndex : curInfo.rowIdx,
-                        startColIndex : curInfo.colIdx,
-                        endColIndex : curInfo.colIdx,
-                    }])
-                    this.#enterShiftKeyFunction();
+                    if(this.#utils.get("select").get("leftSelectYn")){
+                        this.#leftArrowUpKeyFunction();
+                    }else{
+                        this.#utils.get("select").set("leftBodySelectArray",new Array())
+                        let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
+                        this.#utils.get("select").set("bodySelectArray",[{
+                            deleteYn : false,
+                            startRowIndex : curInfo.rowIdx,
+                            endRowIndex : curInfo.rowIdx,
+                            startColIndex : curInfo.colIdx,
+                            endColIndex : curInfo.colIdx,
+                        }])
+                        this.#enterShiftKeyFunction();
+                    }
                 }
                 this.#renderGrid();
             }
@@ -8810,6 +8814,50 @@ class HjsGrid {
         selectInfo["deleteYn"] = false
 
         this.#utils.get("select").set("bodySelectInfo",selectInfo)
+    }
+
+    #leftArrowUpKeyFunction = () => {
+        let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
+
+        let moveRowIndex = Math.max(0,curInfo.rowIdx-1);
+
+        const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+        const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+        this.#utils.get("select").set("leftBodySelectArray",new Array())
+
+        this.#utils.get("select").set("bodySelectArray",[{
+            deleteYn : false
+            , startRowIndex : moveRowIndex
+            , endRowIndex : moveRowIndex
+            , startColIndex : MIN_COLUMN_INDEX
+            , endColIndex : MAX_COLUMN_INDEX
+        }])
+
+        this.#utils.get("select").set("leftBodySelectInfo",{
+            deleteYn : false
+            , startRowIndex : moveRowIndex
+            , endRowIndex : moveRowIndex
+            , startColIndex : MIN_COLUMN_INDEX
+            , endColIndex : MAX_COLUMN_INDEX
+        })
+
+        this.#utils.get("select").set("leftBodySelectStartInfo",{
+            rowIdx : moveRowIndex
+            , colIdx : 0
+        })
+
+        this.#utils.get("select").set("bodySelectCurrentInfo",{
+            rowIdx : moveRowIndex
+            , colIdx : MIN_COLUMN_INDEX
+        })
+
+        this.#utils.get("select").set("leftBodySelectCurrentInfo",{
+            rowIdx : moveRowIndex
+            , colIdx : curInfo.colIdx
+        })
+
+        this.#calcLeftBodySelect(true);
     }
 
     #arrowUpShiftCtrlKeyFunction = e => {
