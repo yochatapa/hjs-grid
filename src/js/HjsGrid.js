@@ -194,6 +194,7 @@ class HjsGrid {
         this.#utils.get("select").set("bodySelectArray",new Array());
         this.#utils.get("select").set("leftBodySelectArray",new Array());
         this.#utils.get("select").set("leftBodySelectYn",false);
+        this.#utils.get("select").set("leftSelectYn",false);
 
         this.#utils.set("current",new Map());
         this.#utils.get("current").set("firstClick",false);
@@ -3048,6 +3049,7 @@ class HjsGrid {
 
     #renderLeftBodySelect = (newSelectArray) => {
         this.#removeChildAll(this.el.get("leftBodySelect"))
+        this.el.get("leftBodySelectTouchEl").style.opacity = "0";
     
         let visibleArray = new Array();
     
@@ -3122,19 +3124,23 @@ class HjsGrid {
         
         if(visibleArray.length === 1){
             if(visibleArray[0].showTop+visibleArray[0].showHeight>0 && visibleArray[0].showLeft+visibleArray[0].showWidth>0){
-                visibleArray[0].divEl.classList.add("hjs-grid-selected-cell-border")
+                //visibleArray[0].divEl.classList.add("hjs-grid-selected-cell-border")
             }                    
         }
 
         let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
-        if(!this.#isUN(curInfo)){
+        let leftSelectYn = this.#utils.get("select").get("leftSelectYn");
+        
+        if(!this.#isUN(curInfo) && leftSelectYn){
             let curTop = (curInfo.rowIdx - ((!LAST_ROW_FLAG)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
 
             this.el.get("leftBodySelectTouchEl").style.top = curTop + "px"
             this.el.get("leftBodySelectTouchEl").style.height = this.#cell.get("height") + "px"
             this.el.get("leftBodySelectTouchEl").style.width = "100%"
+            this.el.get("leftBodySelectTouchEl").classList.add("hjs-grid-selected-current-cell");
+            this.el.get("leftBodySelectTouchEl").style.borderRight = "0px";
+            this.el.get("leftBodySelectTouchEl").style.opacity = "1";
         }
-        
     }
 
     #renderBodySelect = (newSelectArray) => {
@@ -3259,14 +3265,15 @@ class HjsGrid {
                     
                     let realColIdx = (!LAST_COL_FLAG)?this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")):this.#columnsOption.get("visiblePrevColumnIndex").get(this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount")));
                     let left = (this.#columnsOption.get("columnBeforeSum")[curInfo.colIdx] - this.#columnsOption.get("columnBeforeSum")[realColIdx])
-                    
-                    let width = this.#columns[curInfo.colIdx].width
+                    let leftSelectYn = this.#utils.get("select").get("leftSelectYn");
+                    let width = leftSelectYn?this.#columnsOption.get("columnsTotalWidth"):this.#columns[curInfo.colIdx].width
                     
                     // left+width <= EL_WIDTH
                     if(true){
                         curDivEl.style.left = left + "px";
                         curDivEl.style.width = width + "px";
                         curDivEl.style.opacity = "1";
+                        if(leftSelectYn) curDivEl.style.borderLeft = "0px";
 
                         if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor")) && this.el.get("middleBodySelectCurrentEditor")?.style?.opacity === "0"){
                             this.el.get("middleBodySelectCurrentEditor").style.top = top + "px"
@@ -4696,6 +4703,8 @@ class HjsGrid {
     #gridLeftCellMouseDown = (e) => {
         if(e.target.classList.contains("hjs-grid-selected-handle")) return;
         const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
+
+        this.#utils.get("select").set("leftSelectYn",true)
         
         if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
             e.preventDefault(); 
@@ -5381,6 +5390,7 @@ class HjsGrid {
         const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
         let shiftFlag = e.shiftKey;
         let ctrlFlag = e.ctrlKey;
+        this.#utils.get("select").set("leftSelectYn",false);
         if(!this.#isUN(this.el.get("leftBodySelectCurrentEditor"))) this.el.get("leftBodySelectCurrentEditor").style.opacity = "0";
         if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
             e.preventDefault();
