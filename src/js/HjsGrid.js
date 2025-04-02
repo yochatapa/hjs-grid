@@ -8091,8 +8091,16 @@ class HjsGrid {
                     if(curInfo.rowIdx === sa[idx].endRowIndex){ //현재 선택된 행이 마지막 행일때
                         if(sa[idx].startColIndex === sa[idx].endColIndex){ // 여러 행, 하나의 열
                             if(sa.length === 1){
-                                nextRowIdx = sa[idx].startRowIndex;
-                                nextColIdx = curInfo.colIdx;
+                                let curRowspanInfo = this.#getRowspanInfo(curInfo.rowIdx,curInfo.colIdx);
+                                
+                                if(curRowspanInfo[2] === sa[idx].endRowIndex){
+                                    nextRowIdx = Math.min(curInfo.rowIdx+1,this.#data.get("showData").length);
+                                    nextColIdx = curInfo.colIdx;
+                                    moveFlag = true;
+                                }else{
+                                    nextRowIdx = sa[idx].startRowIndex;
+                                    nextColIdx = curInfo.colIdx;
+                                }
                             }else if(idx === sa.length - 1){
                                 nextRowIdx = sa[0].startRowIndex;
                                 nextColIdx = sa[0].startColIndex;
@@ -8229,8 +8237,16 @@ class HjsGrid {
                     if(curInfo.rowIdx === sa[idx].startRowIndex){ //현재 선택된 행이 첫번째 행일때
                         if(sa[idx].startColIndex === sa[idx].endColIndex){ // 여러 행, 하나의 열
                             if(sa.length === 1){
-                                nextRowIdx = sa[idx].endRowIndex;
-                                nextColIdx = sa[idx].endColIndex;
+                                let curRowspanInfo = this.#getRowspanInfo(curInfo.rowIdx,curInfo.colIdx);
+                                
+                                if(curRowspanInfo[0] === sa[idx].startRowIndex){
+                                    nextRowIdx = Math.max(curInfo.rowIdx-1,0);
+                                    nextColIdx = curInfo.colIdx;
+                                    moveFlag = true;
+                                }else{
+                                    nextRowIdx = sa[idx].endRowIndex;
+                                    nextColIdx = sa[idx].endColIndex;
+                                }
                             }else if(idx === 0){
                                 nextRowIdx = sa[sa.length-1].endRowIndex;
                                 nextColIdx = sa[sa.length-1].endColIndex;
