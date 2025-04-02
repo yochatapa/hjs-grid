@@ -7956,7 +7956,11 @@ class HjsGrid {
                 if(e.shiftKey && e.ctrlKey){
                     this.#arrowDownShiftCtrlKeyFunction();
                 }else if(e.shiftKey){
-                    this.#arrowDownShiftKeyFunction();
+                    if(this.#utils.get("select").get("leftSelectYn")){
+                        this.#leftArrowDownShiftKeyFunction();
+                    }else{
+                        this.#arrowDownShiftKeyFunction();
+                    }
                 }else if(e.ctrlKey){
                     this.#arrowDownCtrlKeyFunction();
                 }else{
@@ -8887,10 +8891,7 @@ class HjsGrid {
 
         leftBodySelectArray.splice(targetIdx,0,target);
 
-        this.#utils.get("select").set("leftBodySelectArray",leftBodySelectArray);
-
-        // leftBodySelectArray 처리
-        
+        this.#utils.get("select").set("leftBodySelectArray",leftBodySelectArray);        
 
         const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
         const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
@@ -9345,6 +9346,57 @@ class HjsGrid {
         selectInfo["deleteYn"] = false
 
         this.#utils.get("select").set("bodySelectInfo",selectInfo)
+    }
+
+    #leftArrowDownShiftKeyFunction = () => {
+        let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
+
+        let leftBodySelectInfo = this.#utils.get("select").get("leftBodySelectInfo");
+        let leftBodySelectArray = this.#utils.get("select").get("leftBodySelectArray");
+
+        let startRowIndex, endRowIndex;
+
+        if(leftBodySelectInfo.startRowIndex === curInfo.rowIdx){
+            startRowIndex = Math.max(0,leftBodySelectInfo.startRowIndex);
+            endRowIndex = Math.min(this.#data.get("showData").length-1,leftBodySelectInfo.endRowIndex+1);
+        }else{
+            startRowIndex = Math.max(0,leftBodySelectInfo.startRowIndex+1);
+            endRowIndex = Math.min(this.#data.get("showData").length-1,leftBodySelectInfo.endRowIndex);
+        }
+
+        let target, targetIdx;
+
+        for(let idx=0;idx<leftBodySelectArray.length;idx++){
+            let lbs = leftBodySelectArray[idx];
+            if(lbs.startRowIndex <= curInfo.rowIdx && curInfo.rowIdx <= lbs.endRowIndex){
+                target = lbs;
+                targetIdx = idx;
+                leftBodySelectArray.splice(idx,1);
+                break;
+            }
+        }
+
+        if(this.#isUN(target)) return;
+
+        target.startRowIndex = startRowIndex;
+        target.endRowIndex = endRowIndex;
+
+        leftBodySelectArray.splice(targetIdx,0,target);
+
+        this.#utils.get("select").set("leftBodySelectArray",leftBodySelectArray);        
+
+        const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+        const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+        this.#utils.get("select").set("leftBodySelectInfo",{
+            deleteYn : false
+            , startRowIndex : startRowIndex
+            , endRowIndex : endRowIndex
+            , startColIndex : MIN_COLUMN_INDEX
+            , endColIndex : MAX_COLUMN_INDEX
+        })
+
+        this.#calcLeftBodySelect(true);
     }
 
     #leftArrowDownKeyFunction = () => {
