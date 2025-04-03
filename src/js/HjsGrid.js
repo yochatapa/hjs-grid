@@ -7896,7 +7896,11 @@ class HjsGrid {
             if(editorEl.style.opacity === "0"){
                 e.preventDefault();
                 if(e.shiftKey && e.ctrlKey){
-                    this.#arrowUpShiftCtrlKeyFunction();
+                    if(this.#utils.get("select").get("leftSelectYn")){
+                        this.#leftArrowUpShiftCtrlKeyFunction();
+                    }else{
+                        this.#arrowUpShiftCtrlKeyFunction();
+                    }
                 }else if(e.shiftKey){
                     if(this.#utils.get("select").get("leftSelectYn")){
                         this.#leftArrowUpShiftKeyFunction();
@@ -7954,7 +7958,11 @@ class HjsGrid {
             if(editorEl.style.opacity === "0"){
                 e.preventDefault();
                 if(e.shiftKey && e.ctrlKey){
-                    this.#arrowDownShiftCtrlKeyFunction();
+                    if(this.#utils.get("select").get("leftSelectYn")){
+                        this.#leftArrowDownShiftCtrlKeyFunction();
+                    }else{
+                        this.#arrowDownShiftCtrlKeyFunction();
+                    }
                 }else if(e.shiftKey){
                     if(this.#utils.get("select").get("leftSelectYn")){
                         this.#leftArrowDownShiftKeyFunction();
@@ -8987,6 +8995,52 @@ class HjsGrid {
         this.#calcLeftBodySelect(true);
     }
 
+    #leftArrowUpShiftCtrlKeyFunction = e => {
+        let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
+
+        let leftBodySelectInfo = this.#utils.get("select").get("leftBodySelectInfo");
+        let leftBodySelectArray = this.#utils.get("select").get("leftBodySelectArray");
+
+        let startRowIndex, endRowIndex;
+
+        startRowIndex = 0
+        endRowIndex = Math.min(this.#data.get("showData").length-1,curInfo.rowIdx);
+
+        let target, targetIdx;
+
+        for(let idx=0;idx<leftBodySelectArray.length;idx++){
+            let lbs = leftBodySelectArray[idx];
+            if(lbs.startRowIndex <= curInfo.rowIdx && curInfo.rowIdx <= lbs.endRowIndex){
+                target = lbs;
+                targetIdx = idx;
+                leftBodySelectArray.splice(idx,1);
+                break;
+            }
+        }
+
+        if(this.#isUN(target)) return;
+
+        target.startRowIndex = startRowIndex;
+        target.endRowIndex = endRowIndex;
+
+        leftBodySelectArray.splice(targetIdx,0,target);
+
+        this.#utils.get("select").set("leftBodySelectArray",leftBodySelectArray);        
+
+        const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+        const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+        this.#utils.get("select").set("leftBodySelectInfo",{
+            deleteYn : false
+            , startRowIndex : startRowIndex
+            , endRowIndex : endRowIndex
+            , startColIndex : MIN_COLUMN_INDEX
+            , endColIndex : MAX_COLUMN_INDEX
+        })
+
+        this.#calcLeftBodySelect(true);
+    }
+
     #arrowUpShiftCtrlKeyFunction = e => {
         let sa = this.#getCurrentSelectedArea();
         let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
@@ -9547,6 +9601,52 @@ class HjsGrid {
 
         if(this.#columnsOption.get("visiblePrevColumnIndex").get(nextColIdx) === END_INDEX - 1 || nextColIdx === END_INDEX - 1) this.#utils.get("scroll").set("passedColCount",Math.max(Math.min(PASSED_COL_COUNT+1,SCROLL_COL_COUNT),0))
         else if(nextColIdx < START_INDEX || nextColIdx >= END_INDEX) this.#utils.get("scroll").set("passedColCount",Math.max(Math.min(this.#columnsOption.get("visibleColIndex").get(nextColIdx),SCROLL_COL_COUNT),0))
+
+        this.#calcLeftBodySelect(true);
+    }
+
+    #leftArrowDownShiftCtrlKeyFunction = () => {
+        let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
+
+        let leftBodySelectInfo = this.#utils.get("select").get("leftBodySelectInfo");
+        let leftBodySelectArray = this.#utils.get("select").get("leftBodySelectArray");
+
+        let startRowIndex, endRowIndex;
+
+        startRowIndex = Math.max(0,curInfo.rowIdx);
+        endRowIndex = this.#data.get("showData").length-1;
+
+        let target, targetIdx;
+
+        for(let idx=0;idx<leftBodySelectArray.length;idx++){
+            let lbs = leftBodySelectArray[idx];
+            if(lbs.startRowIndex <= curInfo.rowIdx && curInfo.rowIdx <= lbs.endRowIndex){
+                target = lbs;
+                targetIdx = idx;
+                leftBodySelectArray.splice(idx,1);
+                break;
+            }
+        }
+
+        if(this.#isUN(target)) return;
+
+        target.startRowIndex = startRowIndex;
+        target.endRowIndex = endRowIndex;
+
+        leftBodySelectArray.splice(targetIdx,0,target);
+
+        this.#utils.get("select").set("leftBodySelectArray",leftBodySelectArray);        
+
+        const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+        const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+        this.#utils.get("select").set("leftBodySelectInfo",{
+            deleteYn : false
+            , startRowIndex : startRowIndex
+            , endRowIndex : endRowIndex
+            , startColIndex : MIN_COLUMN_INDEX
+            , endColIndex : MAX_COLUMN_INDEX
+        })
 
         this.#calcLeftBodySelect(true);
     }
