@@ -9053,19 +9053,55 @@ class HjsGrid {
 
         let rowspanYn = this.#getRowspanYn(curInfo.colIdx);
         let rowspanInfo = this.#getRowspanInfo(0,curInfo.colIdx);
-        
-        this.#utils.get("select").set("bodySelectArray",[{
-            deleteYn : false,
-            startRowIndex : rowspanYn?rowspanInfo[0]:0,
-            endRowIndex : rowspanYn?rowspanInfo[2]:0,
-            startColIndex : curInfo.colIdx,
-            endColIndex : curInfo.colIdx
-        }])
 
         this.#utils.get("select").set("bodySelectCurrentInfo",{
             rowIdx : 0,
             colIdx : curInfo.colIdx
         })
+
+        if(this.#utils.get("select").get("leftSelectYn")){
+            const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+            const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+            this.#utils.get("select").set("leftBodySelectArray",[{
+                deleteYn : false,
+                startRowIndex : 0,
+                endRowIndex : 0,
+                startColIndex : MIN_COLUMN_INDEX,
+                endColIndex : MAX_COLUMN_INDEX
+            }])
+
+            this.#utils.get("select").set("bodySelectArray",[{
+                deleteYn : false,
+                startRowIndex : rowspanYn?rowspanInfo[0]:0,
+                endRowIndex : rowspanYn?rowspanInfo[2]:0,
+                startColIndex : MIN_COLUMN_INDEX,
+                endColIndex : MAX_COLUMN_INDEX
+            }])
+
+            this.#utils.get("select").set("leftBodySelectInfo",{
+                deleteYn : false
+                , startRowIndex : 0
+                , endRowIndex : 0
+                , startColIndex : MIN_COLUMN_INDEX
+                , endColIndex : MAX_COLUMN_INDEX
+            })
+            
+            this.#utils.get("select").set("leftBodySelectCurrentInfo",{
+                rowIdx : 0,
+                colIdx : curInfo.colIdx
+            })
+
+            this.#calcLeftBodySelect(true);
+        }else{
+            this.#utils.get("select").set("bodySelectArray",[{
+                deleteYn : false,
+                startRowIndex : rowspanYn?rowspanInfo[0]:0,
+                endRowIndex : rowspanYn?rowspanInfo[2]:0,
+                startColIndex : curInfo.colIdx,
+                endColIndex : curInfo.colIdx
+            }])
+        }
 
         this.goToRow(0)
     }
@@ -9583,19 +9619,55 @@ class HjsGrid {
 
         let rowspanYn = this.#getRowspanYn(curInfo.colIdx);
         let rowspanInfo = this.#getRowspanInfo(MAX_ROW_INDEX,curInfo.colIdx);
-        
-        this.#utils.get("select").set("bodySelectArray",[{
-            deleteYn : false,
-            startRowIndex : rowspanYn?rowspanInfo[0]:MAX_ROW_INDEX,
-            endRowIndex : rowspanYn?rowspanInfo[2]:MAX_ROW_INDEX,
-            startColIndex : curInfo.colIdx,
-            endColIndex : curInfo.colIdx
-        }])
 
         this.#utils.get("select").set("bodySelectCurrentInfo",{
             rowIdx : MAX_ROW_INDEX,
             colIdx : curInfo.colIdx
         })
+
+        if(this.#utils.get("select").get("leftSelectYn")){
+            const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+            const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
+
+            this.#utils.get("select").set("leftBodySelectArray",[{
+                deleteYn : false,
+                startRowIndex : MAX_ROW_INDEX,
+                endRowIndex : MAX_ROW_INDEX,
+                startColIndex : MIN_COLUMN_INDEX,
+                endColIndex : MAX_COLUMN_INDEX
+            }])
+
+            this.#utils.get("select").set("bodySelectArray",[{
+                deleteYn : false,
+                startRowIndex : rowspanYn?rowspanInfo[0]:MAX_ROW_INDEX,
+                endRowIndex : rowspanYn?rowspanInfo[2]:MAX_ROW_INDEX,
+                startColIndex : MIN_COLUMN_INDEX,
+                endColIndex : MAX_COLUMN_INDEX
+            }])
+
+            this.#utils.get("select").set("leftBodySelectInfo",{
+                deleteYn : false
+                , startRowIndex : MAX_ROW_INDEX
+                , endRowIndex : MAX_ROW_INDEX
+                , startColIndex : MIN_COLUMN_INDEX
+                , endColIndex : MAX_COLUMN_INDEX
+            })
+            
+            this.#utils.get("select").set("leftBodySelectCurrentInfo",{
+                rowIdx : MAX_ROW_INDEX,
+                colIdx : curInfo.colIdx
+            })
+
+            this.#calcLeftBodySelect(true);
+        }else{
+            this.#utils.get("select").set("bodySelectArray",[{
+                deleteYn : false,
+                startRowIndex : rowspanYn?rowspanInfo[0]:MAX_ROW_INDEX,
+                endRowIndex : rowspanYn?rowspanInfo[2]:MAX_ROW_INDEX,
+                startColIndex : curInfo.colIdx,
+                endColIndex : curInfo.colIdx
+            }])
+        }
 
         this.goToRow(MAX_ROW_INDEX)
     }
