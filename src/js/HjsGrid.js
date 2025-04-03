@@ -9402,7 +9402,7 @@ class HjsGrid {
     #leftArrowDownKeyFunction = () => {
         let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
 
-        let moveRowIndex = Math.max(0,curInfo.rowIdx+1);
+        let moveRowIndex = Math.min(this.#data.get("showData").length-1,curInfo.rowIdx+1);
 
         const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
         const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
