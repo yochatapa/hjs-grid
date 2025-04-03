@@ -8910,7 +8910,9 @@ class HjsGrid {
     #leftArrowUpKeyFunction = () => {
         let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
 
-        let moveRowIndex = Math.max(0,curInfo.rowIdx-1);
+        let nextRowIdx = Math.max(0,curInfo.rowIdx-1);
+        let sCurInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
+        let nextColIdx = sCurInfo.colIdx;
 
         const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
         const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
@@ -8919,34 +8921,68 @@ class HjsGrid {
 
         this.#utils.get("select").set("bodySelectArray",[{
             deleteYn : false
-            , startRowIndex : moveRowIndex
-            , endRowIndex : moveRowIndex
+            , startRowIndex : nextRowIdx
+            , endRowIndex : nextRowIdx
             , startColIndex : MIN_COLUMN_INDEX
             , endColIndex : MAX_COLUMN_INDEX
         }])
 
         this.#utils.get("select").set("leftBodySelectInfo",{
             deleteYn : false
-            , startRowIndex : moveRowIndex
-            , endRowIndex : moveRowIndex
+            , startRowIndex : nextRowIdx
+            , endRowIndex : nextRowIdx
             , startColIndex : MIN_COLUMN_INDEX
             , endColIndex : MAX_COLUMN_INDEX
         })
 
         this.#utils.get("select").set("leftBodySelectStartInfo",{
-            rowIdx : moveRowIndex
+            rowIdx : nextRowIdx
             , colIdx : 0
         })
 
         this.#utils.get("select").set("bodySelectCurrentInfo",{
-            rowIdx : moveRowIndex
+            rowIdx : nextRowIdx
             , colIdx : MIN_COLUMN_INDEX
         })
 
         this.#utils.get("select").set("leftBodySelectCurrentInfo",{
-            rowIdx : moveRowIndex
+            rowIdx : nextRowIdx
             , colIdx : curInfo.colIdx
         })
+
+        // scroll 계산 처리
+        let PASSED_ROW_COUNT = this.#utils.get("scroll").get("passedRowCount");
+        const VISIBLE_ROW_COUNT = this.#utils.get("scroll").get("visibleRowCount");
+        const SCROLL_ROW_COUNT = this.#utils.get("scroll").get("scrollRowCount");
+
+        if(nextRowIdx === PASSED_ROW_COUNT -1) this.#utils.get("scroll").set("passedRowCount",Math.max(Math.min(PASSED_ROW_COUNT-1,SCROLL_ROW_COUNT),0))
+        else if(nextRowIdx < PASSED_ROW_COUNT || nextRowIdx > PASSED_ROW_COUNT + VISIBLE_ROW_COUNT - 1) this.#utils.get("scroll").set("passedRowCount",Math.max(Math.min(nextRowIdx - VISIBLE_ROW_COUNT + 2,SCROLL_ROW_COUNT),0))
+
+        const EL_WIDTH = this.#utils.get("scroll").get("elWidth");
+        
+        let START_INDEX, END_INDEX, END_WIDTH, TOTAL_INDEX;
+        let START_WIDTH = 0;
+        let TOTAL_WIDTH = 0;
+        let SHOW_WIDTH = 0;
+
+        const COL_TOTAL_COUNT = this.#columns.length;
+
+        let beforeSum = this.#columnsOption.get("columnBeforeSum")
+        let columnWidth = this.#columnsOption.get("columnWidth")  
+        const PASSED_COL_COUNT = this.#utils.get("scroll").get("passedColCount");
+        const SCROLL_COL_COUNT= this.#utils.get("scroll").get("scrollColCount");
+
+        START_INDEX = this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount"));
+        END_INDEX = this.#columnsOption.get("columnBeforeSum").filter(value=>{return value < this.#columnsOption.get("columnBeforeSum")[START_INDEX] + EL_WIDTH}).length;
+        START_WIDTH = beforeSum[START_INDEX];
+        TOTAL_WIDTH = beforeSum[beforeSum.length-1]+columnWidth[columnWidth.length-1];
+        SHOW_WIDTH = beforeSum[END_INDEX]+columnWidth[END_INDEX]-beforeSum[START_INDEX];
+
+        START_INDEX = Math.max(Math.min(START_INDEX,COL_TOTAL_COUNT),0)??0;
+        END_INDEX = Math.max(Math.min(END_INDEX,COL_TOTAL_COUNT),0);
+
+        if(this.#columnsOption.get("visiblePrevColumnIndex").get(nextColIdx) === END_INDEX - 1 || nextColIdx === END_INDEX - 1) this.#utils.get("scroll").set("passedColCount",Math.max(Math.min(PASSED_COL_COUNT+1,SCROLL_COL_COUNT),0))
+        else if(nextColIdx < START_INDEX || nextColIdx >= END_INDEX) this.#utils.get("scroll").set("passedColCount",Math.max(Math.min(this.#columnsOption.get("visibleColIndex").get(nextColIdx),SCROLL_COL_COUNT),0))
 
         this.#calcLeftBodySelect(true);
     }
@@ -9402,7 +9438,9 @@ class HjsGrid {
     #leftArrowDownKeyFunction = () => {
         let curInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo");
 
-        let moveRowIndex = Math.min(this.#data.get("showData").length-1,curInfo.rowIdx+1);
+        let nextRowIdx = Math.min(this.#data.get("showData").length-1,curInfo.rowIdx+1);
+        let sCurInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
+        let nextColIdx = sCurInfo.colIdx;
 
         const MIN_COLUMN_INDEX = Math.min(...this.#columnsOption.get("visibleColIndex").keys().toArray());
         const MAX_COLUMN_INDEX = Math.max(...this.#columnsOption.get("visibleColIndex").keys().toArray());
@@ -9411,34 +9449,68 @@ class HjsGrid {
 
         this.#utils.get("select").set("bodySelectArray",[{
             deleteYn : false
-            , startRowIndex : moveRowIndex
-            , endRowIndex : moveRowIndex
+            , startRowIndex : nextRowIdx
+            , endRowIndex : nextRowIdx
             , startColIndex : MIN_COLUMN_INDEX
             , endColIndex : MAX_COLUMN_INDEX
         }])
 
         this.#utils.get("select").set("leftBodySelectInfo",{
             deleteYn : false
-            , startRowIndex : moveRowIndex
-            , endRowIndex : moveRowIndex
+            , startRowIndex : nextRowIdx
+            , endRowIndex : nextRowIdx
             , startColIndex : MIN_COLUMN_INDEX
             , endColIndex : MAX_COLUMN_INDEX
         })
 
         this.#utils.get("select").set("leftBodySelectStartInfo",{
-            rowIdx : moveRowIndex
+            rowIdx : nextRowIdx
             , colIdx : 0
         })
 
         this.#utils.get("select").set("bodySelectCurrentInfo",{
-            rowIdx : moveRowIndex
+            rowIdx : nextRowIdx
             , colIdx : MIN_COLUMN_INDEX
         })
 
         this.#utils.get("select").set("leftBodySelectCurrentInfo",{
-            rowIdx : moveRowIndex
+            rowIdx : nextRowIdx
             , colIdx : curInfo.colIdx
         })
+
+        // scroll 계산 처리
+        const PASSED_ROW_COUNT = this.#utils.get("scroll").get("passedRowCount");
+        const VISIBLE_ROW_COUNT = this.#utils.get("scroll").get("visibleRowCount");
+        const SCROLL_ROW_COUNT = this.#utils.get("scroll").get("scrollRowCount");
+        
+        if(nextRowIdx === PASSED_ROW_COUNT + VISIBLE_ROW_COUNT - 1) this.#utils.get("scroll").set("passedRowCount",Math.max(Math.min(PASSED_ROW_COUNT+1,SCROLL_ROW_COUNT),0))
+        else if(nextRowIdx < PASSED_ROW_COUNT || nextRowIdx > PASSED_ROW_COUNT + VISIBLE_ROW_COUNT - 1) this.#utils.get("scroll").set("passedRowCount",Math.max(Math.min(nextRowIdx,SCROLL_ROW_COUNT),0))
+
+        const EL_WIDTH = this.#utils.get("scroll").get("elWidth");
+        
+        let START_INDEX, END_INDEX, END_WIDTH, TOTAL_INDEX;
+        let START_WIDTH = 0;
+        let TOTAL_WIDTH = 0;
+        let SHOW_WIDTH = 0;
+
+        const COL_TOTAL_COUNT = this.#columns.length;
+
+        let beforeSum = this.#columnsOption.get("columnBeforeSum")
+        let columnWidth = this.#columnsOption.get("columnWidth")  
+        const PASSED_COL_COUNT = this.#utils.get("scroll").get("passedColCount");
+        const SCROLL_COL_COUNT= this.#utils.get("scroll").get("scrollColCount");
+
+        START_INDEX = this.#columnsOption.get("visibleRealColIndex").get(this.#utils.get("scroll").get("passedColCount"));
+        END_INDEX = this.#columnsOption.get("columnBeforeSum").filter(value=>{return value < this.#columnsOption.get("columnBeforeSum")[START_INDEX] + EL_WIDTH}).length;
+        START_WIDTH = beforeSum[START_INDEX];
+        TOTAL_WIDTH = beforeSum[beforeSum.length-1]+columnWidth[columnWidth.length-1];
+        SHOW_WIDTH = beforeSum[END_INDEX]+columnWidth[END_INDEX]-beforeSum[START_INDEX];
+
+        START_INDEX = Math.max(Math.min(START_INDEX,COL_TOTAL_COUNT),0)??0;
+        END_INDEX = Math.max(Math.min(END_INDEX,COL_TOTAL_COUNT),0);
+
+        if(this.#columnsOption.get("visiblePrevColumnIndex").get(nextColIdx) === END_INDEX - 1 || nextColIdx === END_INDEX - 1) this.#utils.get("scroll").set("passedColCount",Math.max(Math.min(PASSED_COL_COUNT+1,SCROLL_COL_COUNT),0))
+        else if(nextColIdx < START_INDEX || nextColIdx >= END_INDEX) this.#utils.get("scroll").set("passedColCount",Math.max(Math.min(this.#columnsOption.get("visibleColIndex").get(nextColIdx),SCROLL_COL_COUNT),0))
 
         this.#calcLeftBodySelect(true);
     }
