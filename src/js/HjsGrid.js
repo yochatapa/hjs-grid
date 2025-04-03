@@ -5392,6 +5392,7 @@ class HjsGrid {
         if(!this.#isUN(this.el.get("leftBodySelectCurrentEditor"))) this.el.get("leftBodySelectCurrentEditor").style.opacity = "0";
         if(!(e.target.classList.contains("hjs-grid-editor") && e.target.style.opacity !== "0")){
             e.preventDefault();
+            if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor"))) this.el.get("middleBodySelectCurrentEditor").focus();
             // this.#utils.get("select").set("rowspanSet", new Set())
             this.el.get("middleBody").scrollLeft = this.#utils.get("scroll").get("scrollLeft")
             if(this.#utils.get("current").get("firstClick") === false && !RIGHT_FLAG){
@@ -6027,7 +6028,7 @@ class HjsGrid {
     #gridLeftCellMouseMove = (e) => {
         const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
         if(RIGHT_FLAG) return;
-        
+        if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor"))) this.el.get("middleBodySelectCurrentEditor").focus();
         if(this.#utils.get("select").get("leftBodySelectFlag") === true){
             if(e.type === "touchmove"){
                 e.preventDefault();
