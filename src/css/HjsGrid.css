@@ -96,9 +96,9 @@
     --body-cell-background-odd : #ffffff;
     --body-cell-background-even : #ffffff;
 
-    --body-cell-hover-background-odd : #d8f8c0;
+    --body-cell-hover-background-odd : #ecfbe5;
     --body-cell-hover-color-odd : black;
-    --body-cell-hover-background-even : #d8f8c0;
+    --body-cell-hover-background-even : #ecfbe5;
     --body-cell-hover-color-even : black;
 
     --body-cell-font-size-odd : 1rem;
@@ -113,13 +113,14 @@
     --body-cell-margin-top : 5px;
     --body-cell-margin-bottom : 5px;
 
-    --body-cell-selected-background : transparent;
+    --body-cell-selected-background : #ecfbe5;
     --body-cell-selected-border-width : 1px;
     --body-cell-selected-border-style : solid;
-    --body-cell-selected-border-color : #217346;
+    --body-cell-selected-border-color : #7DB774;
     --body-cell-selected-current-border-width : 2px;
-    --body-cell-selected-current-border-style : solid;
-    --body-cell-selected-current-border-color : #217346;
+    --body-cell-selected-current-border-style : dotted;
+    --body-cell-selected-current-border-color : #7DB774;
+    --body-cell-selected-current-background : rgba(192, 243, 120, 0.4);
 
     /* left header */
     --left-header-border-left-width : 0px;
@@ -190,9 +191,9 @@
     --left-body-cell-background-odd : #ffffff;
     --left-body-cell-background-even : #ffffff;
 
-    --left-body-cell-hover-background-odd : #d8f8c0;
+    --left-body-cell-hover-background-odd : #ecfbe5;
     --left-body-cell-hover-color-odd : black;
-    --left-body-cell-hover-background-even : #d8f8c0;
+    --left-body-cell-hover-background-even : #ecfbe5;
     --left-body-cell-hover-color-even : black;
 
     --left-body-cell-font-size : 1rem;
@@ -467,10 +468,6 @@ tr.hjs-grid-left-header-table-tbody-tr:first-child>td {
     border-left: 0px;
 }
 
-td.hjs-grid-left-body-table-tbody-tr-td.select{
-    background-color: #d8f8c0;
-}
-
 .hjs-grid-left-body-table-tbody-tr-td-div {
     display: flex;
     gap: 5px;
@@ -689,10 +686,6 @@ tr.hjs-grid-middle-header-table-tbody-tr:first-child>td {
 
 .hjs-grid-middle-body-table-tbody-tr>.hjs-grid-middle-body-table-tbody-tr-td:nth-child(2)>div{
     border-left: 0px;
-}
-
-td.hjs-grid-middle-body-table-tbody-tr-td.select{
-    background-color: #d8f8c0;
 }
 
 .hjs-grid-middle-body-table-tbody-tr-td-div {
@@ -1038,44 +1031,45 @@ span.hjs-grid-filter-button:after {
 
 /* checked row */
 .hjs-grid-checked-row *{
-    color: blue !important;
+    color: red !important;
 }
 
 .hjs-grid-checked-cell *{
-    color: blue !important;
+    color: red !important;
 }
 
 .hjs-grid-insert-row>td{
-    background-color: #bfd8ff !important;
+    background-color: #cde7ff !important;
 }
 
 .hjs-grid-update-row>td{
-    background-color: #bfffc1 !important;
+    background-color: #cdffce !important;
 }
 
 .hjs-grid-delete-row>td{
-    background-color: #ffcece !important;
+    background-color: #ffcdcd !important;
 }
 
 .hjs-grid-insert-cell{
-    background-color: #bfd8ff !important;
+    background-color: #cde7ff !important;
 }
 
 .hjs-grid-update-cell{
-    background-color: #bfffc1 !important;
+    background-color: #cdffce !important;
 }
 
 .hjs-grid-delete-cell{
-    background-color: #ffcece !important;
+    background-color: #ffcdcd !important;
 }
 
 /* select */
 .hjs-grid-selected-cell-background{
-    background: var(--body-cell-selected-background);
-    outline-color: white;
+    background: transparent;
+    /*outline-color: white;
     outline-offset: -2px;
     outline-style: solid;
-    outline-width: 1px;
+    outline-width: 1px;*/
+    z-index: 1;
 }
 
 .hjs-grid-selected-cell-border{
@@ -1091,12 +1085,18 @@ span.hjs-grid-filter-button:after {
 }
 
 .hjs-grid-selected-current-cell{
-    border-width: var(--body-cell-selected-current-border-width) !important;
-    border-style: var(--body-cell-selected-current-border-style) !important;
-    border-color: var(--body-cell-selected-current-border-color) !important;
+    background: var(--body-cell-selected-current-background);
     z-index: 1;
 }
 
+.hjs-grid-left-body .hjs-grid-selected-current-cell{
+    border-right: 0px !important;
+}
+
+td.hjs-grid-left-body-table-tbody-tr-td.select,td.hjs-grid-middle-body-table-tbody-tr-td.select{
+    background: var(--body-cell-selected-background);
+}
+
 .hjs-grid-editor{
-    z-index: 2;
+    z-index: 3;
 }
