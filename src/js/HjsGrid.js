@@ -3079,6 +3079,8 @@ class HjsGrid {
     
         let LAST_COL_FLAG = (END_COL_INDEX === COL_TOTAL_COUNT && this.#columnsOption.get("visibleColIndex").get(START_COL_INDEX) === this.#utils.get("scroll").get("scrollColCount"))
     
+        this.el.get("leftBody").querySelectorAll(".select").forEach(leftRow => leftRow.classList.remove("select"));
+
         for(let idx=newSelectArray.length-1;idx>=0;idx--){
             let sInfo = newSelectArray[idx];
     
@@ -3118,7 +3120,15 @@ class HjsGrid {
                     index : idx,
                 })
             }
-            else newSelectArray.splice(idx,1)                   
+            else newSelectArray.splice(idx,1)  
+            
+            for(let rowIdx=sInfo.startRowIndex;rowIdx<=sInfo.endRowIndex;rowIdx++){
+                let rows = this.#utils.get("scroll").get("displayedLeftColumn")?.get(rowIdx)
+                if(!this.#isUN(rows))
+                    rows.forEach(row => {
+                        row.classList.add("select")
+                    })
+            }
         }
         
         if(visibleArray.length === 1){
@@ -3175,6 +3185,8 @@ class HjsGrid {
 
         let LAST_COL_FLAG = (END_COL_INDEX === COL_TOTAL_COUNT && this.#columnsOption.get("visibleColIndex").get(START_COL_INDEX) === this.#utils.get("scroll").get("scrollColCount"))
 
+        this.el.get("middleBody").querySelectorAll(".select").forEach(leftRow => leftRow.classList.remove("select"));
+
         for(let idx=newSelectArray.length-1;idx>=0;idx--){
             let sInfo = newSelectArray[idx];
 
@@ -3214,7 +3226,16 @@ class HjsGrid {
                     index : idx,
                 })
             }
-            else newSelectArray.splice(idx,1)                   
+            else newSelectArray.splice(idx,1)    
+            
+            for(let rowIdx=sInfo.startRowIndex;rowIdx<=sInfo.endRowIndex;rowIdx++){
+                for(let colIdx=sInfo.startColIndex;colIdx<=sInfo.endColIndex;colIdx++){
+                    let cell = this.#utils.get("scroll").get("displayedColumn")?.get(rowIdx)?.get(colIdx);
+                    if(!this.#isUN(cell)){
+                        cell.classList.add("select");
+                    }
+                }
+            }
         }
         
         if(visibleArray.length === 1){
@@ -4673,10 +4694,10 @@ class HjsGrid {
         
         if(e.deltaX !== 0){
             if(e.deltaX > 0){
-                PASSED_COL_COUNT += Math.round((e.deltaX)/100)
+                PASSED_COL_COUNT += Math.round((e.deltaX)/50)
             }
             else{
-                PASSED_COL_COUNT += Math.round((e.deltaX)/100)
+                PASSED_COL_COUNT += Math.round((e.deltaX)/50)
             }
             PASSED_COL_COUNT = Math.max(Math.min(PASSED_COL_COUNT,SCROLL_COL_COUNT),0)
             
@@ -7591,7 +7612,8 @@ class HjsGrid {
             }
         }
 
-        
+        console.log("hihihi")
+
         if(setCellFlag && !this.#isUN(rowIdx)) this.#setCellValue(rowIdx,colIdx,editorEl.value);
 
         let top = (rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
