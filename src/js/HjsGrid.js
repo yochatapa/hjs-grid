@@ -1264,6 +1264,19 @@ class HjsGrid {
         const HEIGHT = this.#cell.get("height")
 
         trEl.style.height = HEIGHT + "px";
+        
+        let leftBodySelectArray = this.#utils.get("select").get("leftBodySelectArray");
+
+        let selectYn = false;
+
+        for(let idx=0;idx<leftBodySelectArray.length;idx++){
+            let sa = leftBodySelectArray[idx];
+
+            if(sa.startRowIndex <= rowIdx && rowIdx <= sa.endRowIndex){
+                selectYn = true;
+                break;
+            }
+        }
 
         for(let idx=0;idx<orderArray.length;idx++){
             if(orderArray[idx] === "checkbox" && checkboxFlag === true && !this.#utils.get("scroll").get("displayedLeftColumn").get(rowIdx).has("checkbox")){
@@ -1292,12 +1305,14 @@ class HjsGrid {
                 trEl.append(cellEl)
             }
         }
+
+        if(selectYn) trEl.querySelectorAll("td").forEach(td => td.classList.add("select"))
     }
 
     #createLeftCell = (rowIdx,colIdx) => {
         let tdEl = document.createElement("td");
         tdEl.classList.add("hjs-grid-left-body-table-tbody-tr-td");
-
+        
         if(rowIdx % 2 ===0) tdEl.classList.add("even-cell")
         else tdEl.classList.add("odd-cell")
         
@@ -2044,10 +2059,24 @@ class HjsGrid {
             }
         }
 
+        let bodySelectArray = this.#utils.get("select").get("bodySelectArray");
+
+        let selectYn = false;
+
+        for(let idx=0;idx<bodySelectArray.length;idx++){
+            let sa = bodySelectArray[idx];
+
+            if(sa.startRowIndex <= rowIdx && rowIdx <= sa.endRowIndex && sa.startColIndex <= colIdx && colIdx <= sa.endColIndex){
+                selectYn = true;
+                break;
+            }
+        }
+
         const HEIGHT = this.#cell.get("height")
 
         let tdEl = document.createElement("td");
         tdEl.classList.add("hjs-grid-middle-body-table-tbody-tr-td")
+        if(selectYn) tdEl.classList.add("select")
         tdEl.style.minWidth = columnInfo.width + "px";
         tdEl.style.maxWidth = columnInfo.width + "px";
 
@@ -3079,6 +3108,8 @@ class HjsGrid {
     
         let LAST_COL_FLAG = (END_COL_INDEX === COL_TOTAL_COUNT && this.#columnsOption.get("visibleColIndex").get(START_COL_INDEX) === this.#utils.get("scroll").get("scrollColCount"))
     
+        this.el.get("leftBody").querySelectorAll(".select").forEach(leftRow => leftRow.classList.remove("select"));
+
         for(let idx=newSelectArray.length-1;idx>=0;idx--){
             let sInfo = newSelectArray[idx];
     
@@ -3118,7 +3149,15 @@ class HjsGrid {
                     index : idx,
                 })
             }
-            else newSelectArray.splice(idx,1)                   
+            else newSelectArray.splice(idx,1)  
+            
+            for(let rowIdx=sInfo.startRowIndex;rowIdx<=sInfo.endRowIndex;rowIdx++){
+                let rows = this.#utils.get("scroll").get("displayedLeftColumn")?.get(rowIdx)
+                if(!this.#isUN(rows))
+                    rows.forEach(row => {
+                        row.classList.add("select")
+                    })
+            }
         }
         
         if(visibleArray.length === 1){
@@ -3175,6 +3214,8 @@ class HjsGrid {
 
         let LAST_COL_FLAG = (END_COL_INDEX === COL_TOTAL_COUNT && this.#columnsOption.get("visibleColIndex").get(START_COL_INDEX) === this.#utils.get("scroll").get("scrollColCount"))
 
+        this.el.get("middleBody").querySelectorAll(".select").forEach(leftRow => leftRow.classList.remove("select"));
+
         for(let idx=newSelectArray.length-1;idx>=0;idx--){
             let sInfo = newSelectArray[idx];
 
@@ -3214,7 +3255,16 @@ class HjsGrid {
                     index : idx,
                 })
             }
-            else newSelectArray.splice(idx,1)                   
+            else newSelectArray.splice(idx,1)    
+            
+            for(let rowIdx=sInfo.startRowIndex;rowIdx<=sInfo.endRowIndex;rowIdx++){
+                for(let colIdx=sInfo.startColIndex;colIdx<=sInfo.endColIndex;colIdx++){
+                    let cell = this.#utils.get("scroll").get("displayedColumn")?.get(rowIdx)?.get(colIdx);
+                    if(!this.#isUN(cell)){
+                        cell.classList.add("select");
+                    }
+                }
+            }
         }
         
         if(visibleArray.length === 1){
@@ -3274,6 +3324,7 @@ class HjsGrid {
                         curDivEl.style.width = curDivwidth + "px";
                         curDivEl.style.opacity = "1";
                         if(leftSelectYn) curDivEl.style.borderLeft = "0px";
+                        else curDivEl.style.borderLeft = ""
 
                         if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor")) && this.el.get("middleBodySelectCurrentEditor")?.style?.opacity === "0"){
                             this.el.get("middleBodySelectCurrentEditor").style.top = top + "px"
@@ -4673,10 +4724,10 @@ class HjsGrid {
         
         if(e.deltaX !== 0){
             if(e.deltaX > 0){
-                PASSED_COL_COUNT += Math.round((e.deltaX)/100)
+                PASSED_COL_COUNT += Math.round((e.deltaX)/50)
             }
             else{
-                PASSED_COL_COUNT += Math.round((e.deltaX)/100)
+                PASSED_COL_COUNT += Math.round((e.deltaX)/50)
             }
             PASSED_COL_COUNT = Math.max(Math.min(PASSED_COL_COUNT,SCROLL_COL_COUNT),0)
             
@@ -6016,19 +6067,16 @@ class HjsGrid {
             }
             
             if(leftFlag){
-                this.#calcLeftBodySelect();
                 this.#reRenderGrid();
             }
             
             this.#calcBodySelect();
-            
         }
     }
 
     #gridLeftCellMouseMove = (e) => {
         const RIGHT_FLAG = (e.button === 2)||(e.which === 3);
         if(RIGHT_FLAG) return;
-        if(!this.#isUN(this.el.get("middleBodySelectCurrentEditor"))) this.el.get("middleBodySelectCurrentEditor").focus();
         if(this.#utils.get("select").get("leftBodySelectFlag") === true){
             if(e.type === "touchmove"){
                 e.preventDefault();
@@ -7591,7 +7639,6 @@ class HjsGrid {
             }
         }
 
-        
         if(setCellFlag && !this.#isUN(rowIdx)) this.#setCellValue(rowIdx,colIdx,editorEl.value);
 
         let top = (rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
