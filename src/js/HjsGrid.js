@@ -4638,7 +4638,7 @@ class HjsGrid {
             let clientX = e.type === "mousemove" ? e.clientX : e.touches[0].clientX;
             
             let diffX = clientX - this.#utils.get("horizontalThumbInfo").get("clientX");
-
+            
             const H_ONE_SCROLL = this.#utils.get("scroll").get("hOneScroll");
 
             const SCROLL_COL_COUNT = this.#utils.get("scroll").get("scrollColCount");
@@ -6625,9 +6625,9 @@ class HjsGrid {
 
         let clientX = (e.type==="mousedown"?e.clientX:e.touches[0].clientX)
         
-        if(clientX - this.el.get("scroll").get("vertical").get("track").getBoundingClientRect().y > H_SCROLL_BAR_PADDING + (PASSED_COL_COUNT+1) * H_ONE_SCROLL){
+        if(clientX - this.el.get("scroll").get("horizontal").get("track").getBoundingClientRect().x > H_SCROLL_BAR_PADDING + (PASSED_COL_COUNT+1) * H_ONE_SCROLL){
             PASSED_COL_COUNT += 1;
-        }else if(clientX -this.el.get("scroll").get("vertical").get("track").getBoundingClientRect().y < H_SCROLL_BAR_PADDING + PASSED_COL_COUNT * H_ONE_SCROLL){
+        }else if(clientX -this.el.get("scroll").get("horizontal").get("track").getBoundingClientRect().x < H_SCROLL_BAR_PADDING + PASSED_COL_COUNT * H_ONE_SCROLL){
             PASSED_COL_COUNT -= 1;                    
         }
         PASSED_COL_COUNT = Math.max(Math.min(PASSED_COL_COUNT,SCROLL_COL_COUNT),0);
@@ -6642,10 +6642,10 @@ class HjsGrid {
             let PASSED_COL_COUNT = this.#utils.get("scroll").get("passedColCount");
 
             let clientX = (e.type==="mousedown"?e.clientX:e.touches[0].clientX)
-            
-            if(clientX - this.el.get("scroll").get("vertical").get("track").getBoundingClientRect().y > H_SCROLL_BAR_PADDING + (PASSED_COL_COUNT+1) * H_ONE_SCROLL){
+            console.log(clientX,this.el.get("scroll").get("horizontal").get("track").getBoundingClientRect().x,"/",H_SCROLL_BAR_PADDING,PASSED_COL_COUNT,H_ONE_SCROLL)
+            if(clientX - this.el.get("scroll").get("horizontal").get("track").getBoundingClientRect().x > H_SCROLL_BAR_PADDING + (PASSED_COL_COUNT+1) * H_ONE_SCROLL){
                 PASSED_COL_COUNT += 1;
-            }else if(clientX -this.el.get("scroll").get("vertical").get("track").getBoundingClientRect().y < H_SCROLL_BAR_PADDING + PASSED_COL_COUNT * H_ONE_SCROLL){
+            }else if(clientX -this.el.get("scroll").get("horizontal").get("track").getBoundingClientRect().x < H_SCROLL_BAR_PADDING + PASSED_COL_COUNT * H_ONE_SCROLL){
                 PASSED_COL_COUNT -= 1;                    
             }
             PASSED_COL_COUNT = Math.max(Math.min(PASSED_COL_COUNT,SCROLL_COL_COUNT),0);
