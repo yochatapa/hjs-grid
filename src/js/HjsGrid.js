@@ -4146,6 +4146,7 @@ class HjsGrid {
             let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
             let saFlag = false;
             
+            if(!this.#isUN(curInfo))
             for(let idx=sa.length-1;idx>=0;idx--){
                 let curFlag = false
                 if(curInfo.rowIdx>=sa[idx].startRowIndex && curInfo.rowIdx<=sa[idx].endRowIndex
@@ -4164,6 +4165,30 @@ class HjsGrid {
             }
             
             this.#utils.get("select").set("bodySelectArray",sa);
+
+            let lsa = this.#utils.get("select").get("leftBodySelectArray");
+            let leftCurInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo")
+            let lsaFlag = false;
+            
+            if(!this.#isUN(leftCurInfo))
+            for(let idx=lsa.length-1;idx>=0;idx--){
+                let curFlag = false
+                if(leftCurInfo.rowIdx>=lsa[idx].startRowIndex && leftCurInfo.rowIdx<=lsa[idx].endRowIndex
+                && leftCurInfo.colIdx>=lsa[idx].startColIndex && leftCurInfo.colIdx<=lsa[idx].endColIndex) curFlag = true;
+                
+                if(lsa[idx].startRowIndex >= SHOW_DATA_INDEX) lsa[idx].startRowIndex--;
+                if(lsa[idx].endRowIndex >= SHOW_DATA_INDEX) lsa[idx].endRowIndex--;
+                
+                if(lsa[idx].startRowIndex < 0 && lsa[idx].endRowIndex < 0 || (lsa[idx].startRowIndex === lsa[idx].endRowIndex && lsa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
+                    lsa.splice(idx,1)
+                    if(curFlag) lsaFlag = true
+                }else{
+                    lsa[idx].startRowIndex = Math.max(Math.min(lsa[idx].startRowIndex,this.#data.get("showData").length),0);
+                    lsa[idx].endRowIndex = Math.max(Math.min(lsa[idx].endRowIndex,this.#data.get("showData").length),0);
+                }
+            }
+
+            this.#utils.get("select").set("leftBodySelectArray",lsa);
             
             if(curInfo?.rowIdx >= SHOW_DATA_INDEX){
                 curInfo.rowIdx--;
@@ -4171,6 +4196,20 @@ class HjsGrid {
                 else{ 
                     curInfo.rowIdx = Math.max(Math.min(curInfo.rowIdx,this.#data.get("showData").length),0);
                     this.#utils.get("select").set("bodySelectCurrentInfo",curInfo)
+                }
+            }
+
+            if(leftCurInfo?.rowIdx >= SHOW_DATA_INDEX){
+                leftCurInfo.rowIdx--;
+                if(this.#data.get("showData").length === 0 || (lsaFlag && leftCurInfo.rowIdx<0)){
+                    this.#utils.get("select").set("leftBodySelectCurrentInfo",null)
+                    this.#utils.get("select").set("bodySelectCurrentInfo",null)
+                    this.#utils.get("select").set("bodySelectArray",new Array())
+                    console.log("???")
+                }
+                else{ 
+                    leftCurInfo.rowIdx = Math.max(Math.min(leftCurInfo.rowIdx,this.#data.get("showData").length),0);
+                    this.#utils.get("select").set("leftBodySelectCurrentInfo",curInfo)
                 }
             }
         }
