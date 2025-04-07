@@ -1238,6 +1238,9 @@ class HjsGrid {
         let trEl = document.createElement("tr");
         trEl.classList.add("hjs-grid-left-body-table-tbody-tr")
 
+        if(rowIdx % 2 ===0) trEl.classList.add("even-row")
+        else trEl.classList.add("odd-row")
+
         if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "I") trEl.classList.add("hjs-grid-insert-row");
         if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "U") trEl.classList.add("hjs-grid-update-row");
         if(this.getStatus(this.#getShowOrgDataIndexById(this.#getIdByShowDataIndex(rowIdx))) === "D") trEl.classList.add("hjs-grid-delete-row");
@@ -1312,9 +1315,6 @@ class HjsGrid {
     #createLeftCell = (rowIdx,colIdx) => {
         let tdEl = document.createElement("td");
         tdEl.classList.add("hjs-grid-left-body-table-tbody-tr-td");
-        
-        if(rowIdx % 2 ===0) tdEl.classList.add("even-cell")
-        else tdEl.classList.add("odd-cell")
         
         if(colIdx === "first"){
             tdEl.style.width = "0px"

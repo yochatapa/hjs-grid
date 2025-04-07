@@ -441,20 +441,20 @@ td.hjs-grid-left-body-table-tbody-tr-td {
     border-bottom-color: var(--left-body-cell-border-bottom-color);
 }
 
-td.hjs-grid-left-body-table-tbody-tr-td.odd-cell{
+tr.hjs-grid-left-body-table-tbody-tr.odd-row td.hjs-grid-left-body-table-tbody-tr-td{
     background-color: var(--left-body-cell-background-odd);
 }
 
-td.hjs-grid-left-body-table-tbody-tr-td.odd-cell:hover{
+tr.hjs-grid-left-body-table-tbody-tr.odd-row:hover td.hjs-grid-left-body-table-tbody-tr-td{
     background-color: var(--left-body-cell-hover-background-odd);
     color: var(--left-body-cell-hover-hover-odd);
 }
 
-td.hjs-grid-left-body-table-tbody-tr-td.even-cell{
+tr.hjs-grid-left-body-table-tbody-tr.even-row td.hjs-grid-left-body-table-tbody-tr-td{
     background-color: var(--left-body-cell-background-even);
 }
 
-td.hjs-grid-left-body-table-tbody-tr-td.even-cell:hover{
+tr.hjs-grid-left-body-table-tbody-tr.even-row:hover td.hjs-grid-left-body-table-tbody-tr-td{
     background-color: var(--left-body-cell-hover-background-even);
     color: var(--left-body-cell-hover-hover-even);
 }
