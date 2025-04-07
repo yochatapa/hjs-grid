@@ -2464,7 +2464,6 @@ class HjsGrid {
         let tempArray = new Array();
         
         for(let showOrgRow of showOrgData){
-            if(showOrgRow.IUDFLAG === "D") continue;
             let showFlag = true
             for(let idx=0;idx<filterOrder.length;idx++){
                 let colName = filterOrder[idx].column
