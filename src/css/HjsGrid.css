@@ -1093,7 +1093,8 @@ span.hjs-grid-filter-button:after {
     border-right: 0px !important;
 }
 
-td.hjs-grid-left-body-table-tbody-tr-td.select,td.hjs-grid-middle-body-table-tbody-tr-td.select{
+tr.hjs-grid-left-body-table-tbody-tr td.hjs-grid-left-body-table-tbody-tr-td.select
+,tr.hjs-grid-middle-body-table-tbody-tr td.hjs-grid-middle-body-table-tbody-tr-td.select{
     background: var(--body-cell-selected-background);
 }
 
