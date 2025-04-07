@@ -2393,6 +2393,7 @@ class HjsGrid {
     }
 
     #calcShowData = ()=>{
+        this.#utils.get("select").delete("leftBodySelectCurrentInfo");
         this.#utils.get("select").set("leftBodySelectArray",new Array());
         this.#utils.get("select").set("bodySelectArray",new Array());
 
