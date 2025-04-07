@@ -2059,6 +2059,8 @@ class HjsGrid {
             }
         }
 
+        let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo");
+        let curRowspanInfo = this.#getRowspanInfo(curInfo?.rowIdx,curInfo?.colIdx);
         let bodySelectArray = this.#utils.get("select").get("bodySelectArray");
 
         let selectYn = false;
@@ -2071,6 +2073,8 @@ class HjsGrid {
                 break;
             }
         }
+
+        if(curRowspanInfo[0] === rowIdx && curInfo.colIdx === colIdx) selectYn = true;
 
         const HEIGHT = this.#cell.get("height")
 
@@ -3260,7 +3264,8 @@ class HjsGrid {
             
             for(let rowIdx=sInfo.startRowIndex;rowIdx<=sInfo.endRowIndex;rowIdx++){
                 for(let colIdx=sInfo.startColIndex;colIdx<=sInfo.endColIndex;colIdx++){
-                    let cell = this.#utils.get("scroll").get("displayedColumn")?.get(rowIdx)?.get(colIdx);
+                    let rowspanInfo = this.#getRowspanInfo(rowIdx,colIdx);
+                    let cell = this.#utils.get("scroll").get("displayedColumn")?.get(rowspanInfo[0])?.get(colIdx);
                     if(!this.#isUN(cell)){
                         cell.classList.add("select");
                     }
