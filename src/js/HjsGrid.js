@@ -6370,11 +6370,11 @@ class HjsGrid {
             const SCROLL_COL_COUNT = this.#utils.get("scroll").get("scrollColCount");
             const H_ONE_SCROLL = this.#utils.get("scroll").get("hOneScroll");
             
-            const CELL_WIDTH = Math.min((this.#columnsOption.get("columnsTotalWidth")/this.#columnsOption.get("visibleColumnCount")),EL_WIDTH)
-
+            let CELL_WIDTH = Math.min((this.#columnsOption.get("columnsTotalWidth")/this.#columnsOption.get("visibleColumnCount")),EL_WIDTH)
+            if(CELL_WIDTH <= 50) CELL_WIDTH = 50;
             let colX = deltaX/CELL_WIDTH
             let colAbs = Math.floor(Math.abs(deltaX/CELL_WIDTH))
-    
+        
             let PASSED_COL_COUNT;
 
             if(colX>0) PASSED_COL_COUNT = this.#utils.get("scroll").get("touchInfo").get("startColIndex") + colAbs
