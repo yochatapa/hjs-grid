@@ -2624,14 +2624,14 @@ class HjsGrid {
                 } 
             }
         }
-    
-        this.#renderLeftBodySelect(newSelectArray);
-        this.#renderBodySelect(newLeftSelectArray)
-    
+
         if(setYn === true){
             this.#utils.get("select").set("leftBodySelectArray",newSelectArray);
             this.#utils.get("select").set("bodySelectArray",newLeftSelectArray);                  
         }
+    
+        this.#renderLeftBodySelect(newSelectArray);
+        this.#renderBodySelect(newLeftSelectArray)
     }
 
     #calcBodySelect = (setYn=false) => {
@@ -5474,7 +5474,7 @@ class HjsGrid {
             //     CONTEXT_MENU_TARGET.style.top = (e.clientY/*-tableInfo.top-(rowIdx-passedRowCount)*this.#cell.get("height")*/) + "px"
             // }
             
-            this.#calcLeftBodySelect(e.type==="touchstart");
+            this.#calcLeftBodySelect(true);
         }
     }
 
