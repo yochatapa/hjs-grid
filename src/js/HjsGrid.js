@@ -2624,14 +2624,14 @@ class HjsGrid {
                 } 
             }
         }
-    
-        this.#renderLeftBodySelect(newSelectArray);
-        this.#renderBodySelect(newLeftSelectArray)
-    
+
         if(setYn === true){
             this.#utils.get("select").set("leftBodySelectArray",newSelectArray);
             this.#utils.get("select").set("bodySelectArray",newLeftSelectArray);                  
         }
+    
+        this.#renderLeftBodySelect(newSelectArray);
+        this.#renderBodySelect(newLeftSelectArray)
     }
 
     #calcBodySelect = (setYn=false) => {
