@@ -5474,7 +5474,7 @@ class HjsGrid {
             //     CONTEXT_MENU_TARGET.style.top = (e.clientY/*-tableInfo.top-(rowIdx-passedRowCount)*this.#cell.get("height")*/) + "px"
             // }
             
-            this.#calcLeftBodySelect(e.type==="touchstart");
+            this.#calcLeftBodySelect(true);
         }
     }
 
