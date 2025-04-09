@@ -3263,8 +3263,9 @@ class HjsGrid {
             
             for(let rowIdx=sInfo.startRowIndex;rowIdx<=sInfo.endRowIndex;rowIdx++){
                 for(let colIdx=sInfo.startColIndex;colIdx<=sInfo.endColIndex;colIdx++){
+                    if(this.#columns[colIdx].hidden === true || this.#columns[colIdx].fixed === true) continue;
                     let rowspanInfo = this.#getRowspanInfo(rowIdx,colIdx);
-                    let cell = this.#utils.get("scroll").get("displayedColumn")?.get(rowspanInfo[0])?.get(colIdx);
+                    let cell = this.#utils.get("scroll").get("displayedColumn")?.get(rowspanInfo[0])?.get(colIdx)??this.#utils.get("scroll").get("displayedColumn")?.get(rowIdx)?.get(colIdx);
                     if(!this.#isUN(cell)){
                         cell.classList.add("select");
                     }
