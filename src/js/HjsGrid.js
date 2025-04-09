@@ -4167,7 +4167,7 @@ class HjsGrid {
             
             this.#utils.get("select").set("bodySelectArray",sa);
 
-            let lsa = this.#utils.get("select").get("leftBodySelectArray");
+            let lsa = this.#deepCopy(this.#utils.get("select").get("leftBodySelectArray"));
             let leftCurInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo")
             let lsaFlag = false;
             
@@ -4206,11 +4206,10 @@ class HjsGrid {
                     this.#utils.get("select").set("leftBodySelectCurrentInfo",null)
                     this.#utils.get("select").set("bodySelectCurrentInfo",null)
                     this.#utils.get("select").set("bodySelectArray",new Array())
-                    console.log("???")
                 }
                 else{ 
                     leftCurInfo.rowIdx = Math.max(Math.min(leftCurInfo.rowIdx,this.#data.get("showData").length),0);
-                    this.#utils.get("select").set("leftBodySelectCurrentInfo",curInfo)
+                    this.#utils.get("select").set("leftBodySelectCurrentInfo",leftCurInfo)
                 }
             }
         }
@@ -6686,7 +6685,7 @@ class HjsGrid {
             let PASSED_COL_COUNT = this.#utils.get("scroll").get("passedColCount");
 
             let clientX = (e.type==="mousedown"?e.clientX:e.touches[0].clientX)
-            console.log(clientX,this.el.get("scroll").get("horizontal").get("track").getBoundingClientRect().x,"/",H_SCROLL_BAR_PADDING,PASSED_COL_COUNT,H_ONE_SCROLL)
+            
             if(clientX - this.el.get("scroll").get("horizontal").get("track").getBoundingClientRect().x > H_SCROLL_BAR_PADDING + (PASSED_COL_COUNT+1) * H_ONE_SCROLL){
                 PASSED_COL_COUNT += 1;
             }else if(clientX -this.el.get("scroll").get("horizontal").get("track").getBoundingClientRect().x < H_SCROLL_BAR_PADDING + PASSED_COL_COUNT * H_ONE_SCROLL){
