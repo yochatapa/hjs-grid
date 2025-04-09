@@ -4146,6 +4146,14 @@ class HjsGrid {
             let sa = this.#utils.get("select").get("bodySelectArray");
             let curInfo = this.#utils.get("select").get("bodySelectCurrentInfo")
             let saFlag = false;
+
+            let lsa = this.#deepCopy(this.#utils.get("select").get("leftBodySelectArray"));
+            let leftCurInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo")
+            let lsaFlag = false;
+
+            if(this.#utils.get("select").get("leftSelectYn") && this.#isUN(curInfo)){
+                curInfo = this.#deepCopy(leftCurInfo);
+            }
             
             if(!this.#isUN(curInfo))
             for(let idx=sa.length-1;idx>=0;idx--){
@@ -4156,7 +4164,9 @@ class HjsGrid {
                 if(sa[idx].startRowIndex >= SHOW_DATA_INDEX) sa[idx].startRowIndex--;
                 if(sa[idx].endRowIndex >= SHOW_DATA_INDEX) sa[idx].endRowIndex--;
                 
-                if(sa[idx].startRowIndex < 0 && sa[idx].endRowIndex < 0 || (sa[idx].startRowIndex === sa[idx].endRowIndex && sa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
+                if(sa[idx].startRowIndex < 0 && sa[idx].endRowIndex < 0 
+                    || (sa[idx].startRowIndex === sa[idx].endRowIndex 
+                        && sa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
                     sa.splice(idx,1)
                     if(curFlag) saFlag = true
                 }else{
@@ -4167,29 +4177,30 @@ class HjsGrid {
             
             this.#utils.get("select").set("bodySelectArray",sa);
 
-            let lsa = this.#deepCopy(this.#utils.get("select").get("leftBodySelectArray"));
-            let leftCurInfo = this.#utils.get("select").get("leftBodySelectCurrentInfo")
-            let lsaFlag = false;
-            
-            if(!this.#isUN(leftCurInfo))
-            for(let idx=lsa.length-1;idx>=0;idx--){
-                let curFlag = false
-                if(leftCurInfo.rowIdx>=lsa[idx].startRowIndex && leftCurInfo.rowIdx<=lsa[idx].endRowIndex
-                && leftCurInfo.colIdx>=lsa[idx].startColIndex && leftCurInfo.colIdx<=lsa[idx].endColIndex) curFlag = true;
-                
-                if(lsa[idx].startRowIndex >= SHOW_DATA_INDEX) lsa[idx].startRowIndex--;
-                if(lsa[idx].endRowIndex >= SHOW_DATA_INDEX) lsa[idx].endRowIndex--;
-                
-                if(lsa[idx].startRowIndex < 0 && lsa[idx].endRowIndex < 0 || (lsa[idx].startRowIndex === lsa[idx].endRowIndex && lsa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
-                    lsa.splice(idx,1)
-                    if(curFlag) lsaFlag = true
-                }else{
-                    lsa[idx].startRowIndex = Math.max(Math.min(lsa[idx].startRowIndex,this.#data.get("showData").length),0);
-                    lsa[idx].endRowIndex = Math.max(Math.min(lsa[idx].endRowIndex,this.#data.get("showData").length),0);
-                }
-            }
+            if(this.#utils.get("select").get("leftSelectYn")){
+                if(!this.#isUN(leftCurInfo))
+                    for(let idx=lsa.length-1;idx>=0;idx--){
+                        let curFlag = false
+                        if(leftCurInfo.rowIdx>=lsa[idx].startRowIndex 
+                            && leftCurInfo.rowIdx<=lsa[idx].endRowIndex) curFlag = true;
+                        
+                        if(lsa[idx].startRowIndex >= SHOW_DATA_INDEX) lsa[idx].startRowIndex--;
+                        if(lsa[idx].endRowIndex >= SHOW_DATA_INDEX) lsa[idx].endRowIndex--;
+                        
+                        if(lsa[idx].startRowIndex < 0 && lsa[idx].endRowIndex < 0 
+                            || (lsa[idx].startRowIndex === lsa[idx].endRowIndex 
+                                && lsa[idx].startRowIndex + 1 === SHOW_DATA_INDEX)){
+                            lsa.splice(idx,1)
+                            if(curFlag) lsaFlag = true
+                        }else{
+                            lsa[idx].startRowIndex = Math.max(Math.min(lsa[idx].startRowIndex,this.#data.get("showData").length),0);
+                            lsa[idx].endRowIndex = Math.max(Math.min(lsa[idx].endRowIndex,this.#data.get("showData").length),0);
+                        }
+                    }
 
-            this.#utils.get("select").set("leftBodySelectArray",lsa);
+                this.#utils.get("select").set("leftBodySelectArray",lsa);
+            }            
+
             
             if(curInfo?.rowIdx >= SHOW_DATA_INDEX){
                 curInfo.rowIdx--;
@@ -4200,16 +4211,18 @@ class HjsGrid {
                 }
             }
 
-            if(leftCurInfo?.rowIdx >= SHOW_DATA_INDEX){
-                leftCurInfo.rowIdx--;
-                if(this.#data.get("showData").length === 0 || (lsaFlag && leftCurInfo.rowIdx<0)){
-                    this.#utils.get("select").set("leftBodySelectCurrentInfo",null)
-                    this.#utils.get("select").set("bodySelectCurrentInfo",null)
-                    this.#utils.get("select").set("bodySelectArray",new Array())
-                }
-                else{ 
-                    leftCurInfo.rowIdx = Math.max(Math.min(leftCurInfo.rowIdx,this.#data.get("showData").length),0);
-                    this.#utils.get("select").set("leftBodySelectCurrentInfo",leftCurInfo)
+            if(this.#utils.get("select").get("leftSelectYn")){
+                if(leftCurInfo?.rowIdx >= SHOW_DATA_INDEX){
+                    leftCurInfo.rowIdx--;
+                    if(this.#data.get("showData").length === 0 || (lsaFlag && leftCurInfo.rowIdx<0)){
+                        this.#utils.get("select").set("leftBodySelectCurrentInfo",null)
+                        this.#utils.get("select").set("bodySelectCurrentInfo",null)
+                        this.#utils.get("select").set("bodySelectArray",new Array())
+                    }
+                    else{ 
+                        leftCurInfo.rowIdx = Math.max(Math.min(leftCurInfo.rowIdx,this.#data.get("showData").length),0);
+                        this.#utils.get("select").set("leftBodySelectCurrentInfo",leftCurInfo)
+                    }
                 }
             }
         }
