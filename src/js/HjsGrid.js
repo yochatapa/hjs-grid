@@ -3075,7 +3075,7 @@ class HjsGrid {
         //console.log(newSelectArray,selectArray,this.#utils.get("select").get("bodySelectInfo"))
         
         this.#renderBodySelect(newSelectArray);
-
+        
         if(setYn === true) this.#utils.get("select").set("bodySelectArray",this.#deepCopy(newSelectArray));                
     }
 
@@ -3186,6 +3186,7 @@ class HjsGrid {
     }
 
     #renderBodySelect = (newSelectArray) => {
+        const SCROLL_TOP = this.el.get("middleBody").scrollTop
         this.#removeChildAll(this.el.get("middleBodySelect"))
 
         let visibleArray = new Array();
@@ -3356,6 +3357,7 @@ class HjsGrid {
         }else{
             this.el.get("middleBodySelectCurrent").classList.remove("hjs-grid-selected-current-cell");
         }
+        this.el.get("middleBody").scrollTop = SCROLL_TOP;
     }
 
     #createEditor = (rowIdx,colIdx,leftYn=false,leftWidthSum) => {
@@ -3410,7 +3412,7 @@ class HjsGrid {
 
             editorEl.setAttribute("inputmode","none");
             
-            let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0 || this.el.get("middleBody").scrollTop > this.#cell.get("height"))?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
+            let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
             //let height = Math.max(this.#cell.get("height"),50)
             let height = this.#cell.get("height")
 
@@ -3450,7 +3452,7 @@ class HjsGrid {
             this.#setNativeEvent(editorEl,"focusout",this.#leftEditorFocusOut,[rowId,colNm,editorEl])
             this.#setNativeEvent(editorEl,"keydown",this.#leftEditorKeyDown,[rowId,colNm,editorEl])
 
-            let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0 || this.el.get("middleBody").scrollTop > this.#cell.get("height"))?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
+            let top = (curInfo.rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
             //let height = Math.max(this.#cell.get("height"),50)
             let height = this.#cell.get("height")
 
@@ -5547,8 +5549,8 @@ class HjsGrid {
             let bodyEl = this.el.get("middleBody");
             let clientX = Math.round((e.type==="touchstart"?e.touches[0].clientX:e.clientX)-bodyEl.getBoundingClientRect().x+1);
             let clientY = Math.round((e.type==="touchstart"?e.touches[0].clientY:e.clientY)-bodyEl.getBoundingClientRect().y);
-
-            let rowIdx = ((this.el.get("middleBody").scrollTop === 0 || this.el.get("middleBody").scrollTop > this.#cell.get("height"))?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1) + Math.floor((clientY+((this.el.get("middleBody").scrollTop === 0 || this.el.get("middleBody").scrollTop > this.#cell.get("height"))?0:this.el.get("middleBody").scrollTop))/this.#cell.get("height"));
+            this.reRenderGrid();
+            let rowIdx = ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1) + Math.floor((clientY+((this.el.get("middleBody").scrollTop === 0)?0:this.el.get("middleBody").scrollTop))/this.#cell.get("height"));
             rowIdx=Math.min(rowIdx,this.#data.get("showData").length-1)
 
             let passedX;
@@ -6117,7 +6119,7 @@ class HjsGrid {
                 })                        
 
                 let tableInfo = this.el.get("middleBodyTable").getBoundingClientRect();
-                let passedRowCount = ((this.el.get("middleBody").scrollTop === 0 || this.el.get("middleBody").scrollTop > this.#cell.get("height"))?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1)
+                let passedRowCount = ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1)
 
                 CONTEXT_MENU_TARGET.style.left = (e.clientX/*-tableInfo.left-(this.#columnsOption.get("columnBeforeSum")[colIdx]-passedX)*/) + "px"
                 CONTEXT_MENU_TARGET.style.top = (e.clientY/*-tableInfo.top-(rowIdx-passedRowCount)*this.#cell.get("height")*/) + "px"
@@ -6126,8 +6128,9 @@ class HjsGrid {
             if(leftFlag){
                 this.#reRenderGrid();
             }
-            
+            console.log("aaaaaaaaaa",this.el.get("middleBody").scrollTop)
             this.#calcBodySelect();
+            console.log("ssssssssss",this.el.get("middleBody").scrollTop)
         }
     }
 
@@ -6218,7 +6221,7 @@ class HjsGrid {
             let clientX = Math.round((e.type==="touchmove"?e.touches[0].clientX:e.clientX)-bodyEl.getBoundingClientRect().x+1);
             let clientY = Math.round((e.type==="touchmove"?e.touches[0].clientY:e.clientY)-bodyEl.getBoundingClientRect().y);
 
-            let rowIdx = ((this.el.get("middleBody").scrollTop === 0 || this.el.get("middleBody").scrollTop > this.#cell.get("height"))?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1) + Math.floor((clientY+((this.el.get("middleBody").scrollTop === 0 || this.el.get("middleBody").scrollTop > this.#cell.get("height"))?0:this.el.get("middleBody").scrollTop))/this.#cell.get("height"));
+            let rowIdx = ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1) + Math.floor((clientY+((this.el.get("middleBody").scrollTop === 0)?0:this.el.get("middleBody").scrollTop))/this.#cell.get("height"));
             rowIdx=Math.min(rowIdx,this.#data.get("showData").length-1)
 
             let passedX;
@@ -7698,7 +7701,7 @@ class HjsGrid {
 
         if(setCellFlag && !this.#isUN(rowIdx)) this.#setCellValue(rowIdx,colIdx,editorEl.value);
 
-        let top = (rowIdx - ((this.el.get("middleBody").scrollTop === 0 || this.el.get("middleBody").scrollTop > this.#cell.get("height"))?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
+        let top = (rowIdx - ((this.el.get("middleBody").scrollTop === 0)?this.#utils.get("scroll").get("passedRowCount"):this.#utils.get("scroll").get("passedRowCount")-1))*this.#cell.get("height");
         let height = this.#cell.get("height")
         const EL_HEIGHT = this.#utils.get("scroll").get("elHeight");
 
